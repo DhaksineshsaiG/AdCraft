@@ -68,6 +68,11 @@ interface EnvConfig {
   WOOCOMMERCE_CONSUMER_KEY: string;
   WOOCOMMERCE_CONSUMER_SECRET: string;
 
+  // Razorpay (Test Mode)
+  RAZORPAY_KEY_ID: string;
+  RAZORPAY_KEY_SECRET: string;
+  CAMPAIGN_EXECUTION_AMOUNT: number;
+
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
@@ -197,6 +202,11 @@ function buildEnvConfig(): EnvConfig {
     // WooCommerce
     WOOCOMMERCE_CONSUMER_KEY: optionalEnv('WOOCOMMERCE_CONSUMER_KEY', ''),
     WOOCOMMERCE_CONSUMER_SECRET: optionalEnv('WOOCOMMERCE_CONSUMER_SECRET', ''),
+
+    // Razorpay (Test Mode)
+    RAZORPAY_KEY_ID: optionalEnv('RAZORPAY_KEY_ID', ''),
+    RAZORPAY_KEY_SECRET: optionalEnv('RAZORPAY_KEY_SECRET', ''),
+    CAMPAIGN_EXECUTION_AMOUNT: requireNumber('CAMPAIGN_EXECUTION_AMOUNT', 499),
 
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: requireNumber('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000), // 15 minutes

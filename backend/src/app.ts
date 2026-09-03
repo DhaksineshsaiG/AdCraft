@@ -19,6 +19,7 @@ import posterRoutes from './routes/poster.routes';
 import exportRoutes from './routes/export.routes';
 import growthRoutes from './routes/growth.routes';
 import campaignRoutes from './routes/campaign.routes';
+import paymentRoutes from './routes/payment.routes';
 
 // â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -185,6 +186,7 @@ export function createApp(): Application {
   app.use(`${apiBase}/export`,   exportRoutes);     // Storage and Export Services
   app.use(`${apiBase}/growth`,   growthRoutes);     // AI Growth Agent Service
   app.use(`${apiBase}/campaigns`, campaignRoutes);  // Campaign Orchestrator Service
+  app.use(`${apiBase}/payments`,  paymentRoutes);   // Razorpay Commerce Service
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // â”€â”€ Error Handling (must be last)

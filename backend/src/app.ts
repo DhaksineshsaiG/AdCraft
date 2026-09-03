@@ -1,4 +1,4 @@
-﻿import express, { Application, Request, Response } from 'express';
+import express, { Application, Request, Response } from 'express';
 import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -17,6 +17,7 @@ import productRoutes from './routes/product.routes';
 import generatedContentRoutes from './routes/generatedContent.routes';
 import posterRoutes from './routes/poster.routes';
 import exportRoutes from './routes/export.routes';
+import growthRoutes from './routes/growth.routes';
 
 // â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -181,6 +182,7 @@ export function createApp(): Application {
   app.use(`${apiBase}/generated-content`, generatedContentRoutes);
   app.use(`${apiBase}/posters`,  posterRoutes);     // AI Poster Generation Engine
   app.use(`${apiBase}/export`,   exportRoutes);     // Storage and Export Services
+  app.use(`${apiBase}/growth`,   growthRoutes);     // AI Growth Agent Service
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // â”€â”€ Error Handling (must be last)

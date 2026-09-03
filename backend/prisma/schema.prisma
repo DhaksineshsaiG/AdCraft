@@ -130,6 +130,16 @@ enum PosterSize {
   custom
 }
 
+enum CampaignStatus {
+  draft
+  generating
+  pending_approval
+  approved
+  active
+  completed
+  failed
+}
+
 enum StorageProvider {
   cloudinary
   s3
@@ -165,6 +175,7 @@ model User {
   products          Product[]
   generatedContents GeneratedContent[]
   posters           Poster[]
+  campaigns         Campaign[]
 
   @@index([status])
   @@index([role])
@@ -250,6 +261,7 @@ model Store {
   products          Product[]
   generatedContents GeneratedContent[]
   posters           Poster[]
+  campaigns         Campaign[]
 
   @@index([ownerId])
   @@index([ownerId, status])
@@ -304,6 +316,7 @@ model Product {
 
   generatedContents GeneratedContent[]
   posters           Poster[]
+  campaigns         Campaign[]
 
   @@unique([sourceId, storeId])
   @@index([storeId, status])
@@ -424,6 +437,7 @@ model Poster {
   childPosters               Poster[]         @relation("PosterVersions")
 
   exports PosterExport[]
+  campaigns                  Campaign[]
 
   @@index([storeId, generationStatus])
   @@index([storeId, createdAt(sort: Desc)])
@@ -454,4 +468,37 @@ model PosterExport {
   @@index([format])
   @@index([exportedAt(sort: Desc)])
   @@map("poster_exports")
+}
+
+model Campaign {
+  id               String         @id @default(uuid()) @db.Uuid
+  name             String         @db.VarChar(255)
+  objective        String
+  strategy         String
+  suggestedOffer   String?
+  targetAudience   String?
+  rationale        String?
+  marketingContent Json?
+  status           CampaignStatus @default(draft)
+  posterId         String?        @db.Uuid
+  posterUrl        String?
+  failureReason    String?
+  approvedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  storeId          String         @db.Uuid
+  productId        String         @db.Uuid
+  ownerId          String         @db.Uuid
+
+  store            Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  owner            User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  poster           Poster?        @relation(fields: [posterId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, status])
+  @@index([ownerId, status])
+  @@index([productId])
+  @@index([createdAt(sort: Desc)])
+  @@map("campaigns")
 }

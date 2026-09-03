@@ -1,0 +1,13 @@
+{
+  "name": "Technology",
+  "matchTerms": ["technology", "tech", "smart", "device", "app", "digital"],
+  "verbs": ["automate", "optimize", "connect", "accelerate", "secure", "scale"],
+  "adjectives": ["intelligent", "scalable", "secure", "efficient", "future-ready", "connected"],
+  "benefits": ["smarter workflows", "secure productivity", "future-ready control", "faster execution"],
+  "cta": ["Upgrade The Workflow", "Explore Smart Tech", "Scale Smarter"],
+  "emotions": ["capable", "efficient", "future-ready"],
+  "audience": ["teams", "developers", "operators"],
+  "features": ["smart automation", "secure access", "cloud sync", "data controls"],
+  "headlineTemplates": ["Smarter Systems Start Here", "Built To {verb} The Workflow", "Technology For {benefit}"],
+  "descriptionTemplates": ["{feature} gives {audience} a clearer path to {benefit}."]
+}

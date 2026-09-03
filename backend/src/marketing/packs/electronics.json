@@ -1,0 +1,13 @@
+{
+  "name": "Electronics",
+  "matchTerms": ["electronics", "phone", "earbuds", "speaker", "watch", "bluetooth", "wireless"],
+  "verbs": ["connect", "sync", "stream", "power", "pair", "control"],
+  "adjectives": ["smart", "wireless", "portable", "advanced", "connected", "fast"],
+  "benefits": ["seamless connectivity", "clear audio", "portable productivity", "smarter control"],
+  "cta": ["Get Connected", "Upgrade Your Tech", "Shop Smart Gear"],
+  "emotions": ["connected", "capable", "in control"],
+  "audience": ["tech lovers", "professionals", "commuters"],
+  "features": ["bluetooth pairing", "long battery", "smart controls", "portable design"],
+  "headlineTemplates": ["Connect To More {benefit}", "Smart Power For {audience}", "Built Around {feature}"],
+  "descriptionTemplates": ["{feature} gives {audience} a {adjective} way to enjoy {benefit}."]
+}

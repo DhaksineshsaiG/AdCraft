@@ -1,0 +1,13 @@
+{
+  "name": "Gaming",
+  "matchTerms": ["gaming", "keyboard", "laptop", "graphics", "mechanical", "rgb", "fps"],
+  "verbs": ["dominate", "stream", "react", "launch", "command", "grind"],
+  "adjectives": ["low-latency", "tactical", "immersive", "competitive", "rgb-ready", "responsive"],
+  "benefits": ["competitive control", "faster reactions", "immersive sessions", "setup confidence"],
+  "cta": ["Level Up Now", "Shop Gaming Gear", "Power The Setup"],
+  "emotions": ["focused", "competitive", "locked-in"],
+  "audience": ["gamers", "streamers", "esports players"],
+  "features": ["mechanical switches", "high refresh display", "rgb lighting", "cooling system"],
+  "headlineTemplates": ["Built For The Next Match", "Command Every {feature}", "Level Up {benefit}"],
+  "descriptionTemplates": ["{feature} helps {audience} stay {emotion} through every session."]
+}

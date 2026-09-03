@@ -1,0 +1,13 @@
+{
+  "name": "Fitness",
+  "matchTerms": ["fitness", "running", "sports", "training", "hydration", "backpack", "workout"],
+  "verbs": ["train", "hydrate", "move", "push", "perform", "recover"],
+  "adjectives": ["training-ready", "durable", "lightweight", "sweat-ready", "powerful", "secure"],
+  "benefits": ["workout confidence", "focused performance", "active-day support", "hydration on the move"],
+  "cta": ["Train With Confidence", "Shop Training Gear", "Power The Workout"],
+  "emotions": ["driven", "ready", "strong"],
+  "audience": ["athletes", "fitness enthusiasts", "outdoor movers"],
+  "features": ["secure carry", "leak-resistant design", "breathable panel", "training fit"],
+  "headlineTemplates": ["Ready For Every Rep", "Train With {benefit}", "Built To Keep You {emotion}"],
+  "descriptionTemplates": ["{feature} helps {audience} stay {emotion} while building {benefit}."]
+}

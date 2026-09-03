@@ -1,0 +1,7 @@
+{
+  "Action": ["Shop Now", "Explore Collection", "Discover More", "Find Your Fit", "Start Today", "Choose Yours", "Upgrade Now", "Get Started", "Shop The Edit", "Explore Today", "Try It Now", "View Products"],
+  "Luxury": ["Experience Luxury", "Discover The Signature", "Make It Yours", "Indulge Today", "Choose Elegance", "Explore The Ritual", "Find Your Finish", "Own The Moment", "Gift Beautifully", "Reveal The Detail", "Shop The Collection", "Elevate Today"],
+  "Minimal": ["View Collection", "Explore Essentials", "Choose Better", "Shop Simply", "Find The Piece", "See Details", "Refresh The Routine", "Create Calm", "Bring It Home", "Complete The Space", "Start Simple", "Browse Essentials"],
+  "Urgency": ["Shop New Arrivals", "Get Yours Today", "Start Strong", "Refresh Now", "Claim Your Style", "Power Up Today", "Find It First", "Shop The Drop", "Upgrade The Day", "Move Now", "Choose Today", "Own It Now"],
+  "Collection": ["Shop The Range", "Explore Styles", "View The Edit", "Browse Collection", "Discover Favorites", "Shop Best Sellers", "Explore The Lineup", "Find Your Match", "See The Collection", "Shop The Series", "Explore New Picks", "View More"]
+}

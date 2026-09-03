@@ -1,0 +1,13 @@
+{
+  "name": "Coffee",
+  "matchTerms": ["coffee", "mug", "tea", "ceramic", "brew"],
+  "verbs": ["brew", "sip", "savor", "warm", "pour", "share"],
+  "adjectives": ["cozy", "ceramic", "smooth", "warm", "inviting", "daily"],
+  "benefits": ["better mornings", "cozy breaks", "comfort in every sip", "relaxed rituals"],
+  "cta": ["Warm Your Routine", "Shop Mugs", "Start The Morning"],
+  "emotions": ["cozy", "restored", "calm"],
+  "audience": ["coffee lovers", "tea drinkers", "home baristas"],
+  "features": ["ceramic finish", "comfortable handle", "generous shape", "warm glaze"],
+  "headlineTemplates": ["A Warmer Way To {verb}", "Sip Into {emotion}", "Made For {benefit}"],
+  "descriptionTemplates": ["{feature} brings {benefit} to {audience} looking for a calmer ritual."]
+}

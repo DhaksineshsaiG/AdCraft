@@ -1,0 +1,13 @@
+{
+  "name": "Luxury",
+  "matchTerms": ["luxury", "perfume", "premium", "signature", "leather", "dior"],
+  "verbs": ["indulge", "elevate", "refine", "unveil", "experience", "distinguish"],
+  "adjectives": ["exclusive", "signature", "refined", "opulent", "premium", "polished"],
+  "benefits": ["elevated presence", "lasting impression", "premium confidence", "signature style"],
+  "cta": ["Experience Luxury", "Discover The Signature", "Indulge Today"],
+  "emotions": ["sophisticated", "alluring", "assured"],
+  "audience": ["luxury buyers", "professionals", "gift shoppers"],
+  "features": ["premium finish", "signature detail", "crafted material", "refined profile"],
+  "headlineTemplates": ["The Signature Of {emotion}", "Luxury In Every {feature}", "A More {adjective} Ritual"],
+  "descriptionTemplates": ["Crafted for {audience}, {feature} creates {benefit} with quiet distinction."]
+}

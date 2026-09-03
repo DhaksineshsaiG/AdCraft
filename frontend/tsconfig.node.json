@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+
+  "compilerOptions": {
+    /* Required by Vite's project references */
+    "composite":    true,
+
+    /* Module system — Vite processes vite.config.ts via esbuild (ESM) */
+    "module":           "ESNext",
+    "moduleResolution": "bundler",
+
+    /* Target — Node 18+ is the minimum Vite 5 runtime */
+    "target": "ES2022",
+    "lib":    ["ES2022"],
+
+    /* Strict checks on config files */
+    "strict": true,
+    "noUnusedLocals":     false,
+    "noUnusedParameters": false,
+
+    /* Interop */
+    "esModuleInterop":             true,
+    "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions":   true,
+    "resolveJsonModule":            true,
+
+    /* Output — tsconfig.node.json only type-checks; Vite handles emit */
+   
+    "skipLibCheck": true,
+
+    /* Needed for tailwind.config.ts plugin imports */
+    "types": ["node"]
+  },
+
+  /* Only include Vite and config files — NOT the src/ tree */
+  "include": [
+    "vite.config.ts",
+    "tailwind.config.ts",
+  ]
+}

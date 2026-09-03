@@ -1,0 +1,13 @@
+{
+  "name": "Jewelry",
+  "matchTerms": ["jewelry", "necklace", "gold", "ring", "bracelet", "earrings"],
+  "verbs": ["shine", "adorn", "gift", "celebrate", "layer", "treasure"],
+  "adjectives": ["radiant", "elegant", "delicate", "polished", "timeless", "gift-ready"],
+  "benefits": ["meaningful sparkle", "everyday elegance", "keepsake value", "occasion-ready shine"],
+  "cta": ["Shop The Shine", "Gift The Moment", "Find Your Piece"],
+  "emotions": ["cherished", "elegant", "radiant"],
+  "audience": ["gift buyers", "jewelry lovers", "style seekers"],
+  "features": ["gold finish", "delicate chain", "polished setting", "gift box"],
+  "headlineTemplates": ["A Keepsake Made To {verb}", "Gift More {emotion}", "{adjective} Shine For Every Moment"],
+  "descriptionTemplates": ["{feature} brings {benefit} to {audience} who value lasting detail."]
+}

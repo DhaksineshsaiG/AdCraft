@@ -1,0 +1,457 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  owner
+  admin
+  viewer
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+  pending_verification
+}
+
+enum AuthProvider {
+  local
+  google
+  github
+}
+
+enum StoreType {
+  shopify
+  woocommerce
+}
+
+enum StoreStatus {
+  active
+  inactive
+  pending
+  error
+  disconnected
+}
+
+enum SyncStatus {
+  idle
+  syncing
+  success
+  failed
+}
+
+enum ProductStatus {
+  active
+  draft
+  archived
+  out_of_stock
+}
+
+enum ProductSource {
+  shopify
+  woocommerce
+  manual
+}
+
+enum ProductProcessingStatus {
+  pending
+  processing
+  ready
+  failed
+  stale
+}
+
+enum ContentType {
+  marketing_copy
+  headline
+  tagline
+  call_to_action
+  product_description
+  promotional_text
+  image_prompt
+}
+
+enum ContentStatus {
+  pending
+  generating
+  completed
+  failed
+  rejected
+  approved
+}
+
+enum ContentLanguage {
+  en
+  es
+  fr
+  de
+  pt
+  ar
+  zh
+  ja
+  hi
+  ta
+}
+
+enum AIModel {
+  gpt_4o      @map("gpt-4o")
+  gpt_4o_mini @map("gpt-4o-mini")
+  gpt_4_turbo @map("gpt-4-turbo")
+  dalle_3     @map("dall-e-3")
+  dalle_2     @map("dall-e-2")
+}
+
+enum GenerationStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum PosterFormat {
+  jpeg
+  png
+  webp
+  pdf
+}
+
+enum PosterSize {
+  square
+  portrait
+  landscape
+  a4_portrait
+  story
+  custom
+}
+
+enum StorageProvider {
+  cloudinary
+  s3
+  local
+}
+
+model User {
+  id                              String       @id @default(uuid()) @db.Uuid
+  name                            String       @db.VarChar(100)
+  email                           String       @unique @db.VarChar(254)
+  password                        String?
+  role                            UserRole     @default(owner)
+  status                          UserStatus   @default(pending_verification)
+  avatarUrl                       String?
+  isEmailVerified                 Boolean      @default(false)
+  emailVerificationToken          String?
+  emailVerificationTokenExpiresAt DateTime?
+  passwordResetToken              String?
+  passwordResetTokenExpiresAt     DateTime?
+  emailOnPosterGenerated          Boolean      @default(true)
+  emailOnExportReady              Boolean      @default(true)
+  emailOnStoreConnected           Boolean      @default(true)
+  emailMarketing                  Boolean      @default(false)
+  lastLoginAt                     DateTime?
+  lastLoginIp                     String?
+  loginCount                      Int          @default(0)
+  createdAt                       DateTime     @default(now())
+  updatedAt                       DateTime     @updatedAt
+
+  refreshTokens     RefreshToken[]
+  oauthProviders    OAuthProviderAccount[]
+  stores            Store[]
+  products          Product[]
+  generatedContents GeneratedContent[]
+  posters           Poster[]
+
+  @@index([status])
+  @@index([role])
+  @@index([createdAt(sort: Desc)])
+  @@index([passwordResetToken])
+  @@index([emailVerificationToken])
+  @@map("users")
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid()) @db.Uuid
+  token       String    @unique
+  expiresAt   DateTime
+  createdByIp String
+  isRevoked   Boolean   @default(false)
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRevoked, expiresAt])
+  @@map("refresh_tokens")
+}
+
+model OAuthProviderAccount {
+  id             String       @id @default(uuid()) @db.Uuid
+  provider       AuthProvider
+  providerId     String
+  accessToken    String?
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  userId         String       @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("oauth_provider_accounts")
+}
+
+model Store {
+  id                     String      @id @default(uuid()) @db.Uuid
+  name                   String      @db.VarChar(150)
+  slug                   String      @unique @db.VarChar(100)
+  description            String?     @db.VarChar(500)
+  logoUrl                String?
+  type                   StoreType
+  status                 StoreStatus @default(pending)
+  shopifyShopDomain      String?     @unique
+  shopifyAccessToken     String?
+  shopifyWebhookSecret   String?
+  shopifyApiVersion      String?
+  shopifyScopes          String[]    @default([])
+  wooStoreUrl            String?
+  wooConsumerKey         String?
+  wooConsumerSecret      String?
+  wooApiVersion          String?
+  syncStatus             SyncStatus  @default(idle)
+  lastSyncAt             DateTime?
+  nextSyncAt             DateTime?
+  totalProductsSynced    Int         @default(0)
+  lastSyncError          String?
+  syncDurationMs         Int?
+  totalProductsImported  Int         @default(0)
+  totalPostersGenerated  Int         @default(0)
+  totalExports           Int         @default(0)
+  lastActivityAt         DateTime?
+  defaultTemplateId      String?
+  brandColor             String?
+  defaultLogoUrl         String?
+  fontFamily             String?     @db.VarChar(100)
+  watermarkEnabled       Boolean     @default(false)
+  defaultLocale          String      @default("en-US")
+  currency               String      @default("USD") @db.VarChar(3)
+  isArchived             Boolean     @default(false)
+  archivedAt             DateTime?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  ownerId                String      @db.Uuid
+  owner                  User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  products          Product[]
+  generatedContents GeneratedContent[]
+  posters           Poster[]
+
+  @@index([ownerId])
+  @@index([ownerId, status])
+  @@index([type, status])
+  @@index([isArchived, ownerId])
+  @@index([createdAt(sort: Desc)])
+  @@map("stores")
+}
+
+model Product {
+  id                       String                  @id @default(uuid()) @db.Uuid
+  sourceId                 String
+  source                   ProductSource
+  externalUrl              String?
+  name                     String                  @db.VarChar(500)
+  description              String?
+  shortDescription         String?                 @db.VarChar(1000)
+  sku                      String?                 @db.VarChar(100)
+  barcode                  String?                 @db.VarChar(100)
+  price                    Float
+  compareAtPrice           Float?
+  currency                 String                  @default("USD") @db.VarChar(3)
+  images                   Json                    @default("[]")
+  categories               String[]                @default([])
+  tags                     String[]                @default([])
+  vendor                   String?                 @db.VarChar(255)
+  productType              String?                 @db.VarChar(255)
+  variants                 Json                    @default("[]")
+  hasVariants              Boolean                 @default(false)
+  weight                   Float?
+  weightUnit               String?
+  length                   Float?
+  width                    Float?
+  height                   Float?
+  dimensionUnit            String?
+  status                   ProductStatus           @default(active)
+  processingStatus         ProductProcessingStatus @default(pending)
+  processedAt              DateTime?
+  processingError          String?
+  aiSummary                String?                 @db.VarChar(1000)
+  keywords                 String[]                @default([])
+  processingDurationMs     Int?
+  sourceCreatedAt          DateTime?
+  sourceUpdatedAt          DateTime?
+  lastSyncedAt             DateTime                @default(now())
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  storeId                  String                  @db.Uuid
+  ownerId                  String                  @db.Uuid
+  store                    Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  owner                    User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  generatedContents GeneratedContent[]
+  posters           Poster[]
+
+  @@unique([sourceId, storeId])
+  @@index([storeId, status])
+  @@index([ownerId])
+  @@index([ownerId, status])
+  @@index([processingStatus])
+  @@index([storeId, processingStatus])
+  @@index([categories], type: Gin)
+  @@index([tags], type: Gin)
+  @@index([createdAt(sort: Desc)])
+  @@index([lastSyncedAt])
+  @@map("products")
+}
+
+model GeneratedContent {
+  id                       String          @id @default(uuid()) @db.Uuid
+  contentType              ContentType
+  status                   ContentStatus   @default(pending)
+  language                 ContentLanguage @default(en)
+  productName              String          @db.VarChar(500)
+  productDescription       String?
+  productPrice             Float?
+  productCurrency          String?         @db.VarChar(3)
+  contextKeywords          String[]        @default([])
+  systemPrompt             String
+  userPrompt               String
+  temperature              Float           @default(0.7)
+  maxTokens                Int             @default(1000)
+  topP                     Float?
+  frequencyPenalty         Float?
+  presencePenalty          Float?
+  model                    AIModel
+  variants                 Json            @default("[]")
+  selectedVariantIndex     Int?
+  rawOutput                String?
+  errorMessage             String?
+  failedAt                 DateTime?
+  promptTokens             Int?
+  completionTokens         Int?
+  totalTokens              Int?
+  generationDurationMs     Int?
+  estimatedCostUsd         Float?
+  retryCount               Int?
+  useCount                 Int             @default(0)
+  version                  Int             @default(1)
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  productId                String          @db.Uuid
+  storeId                  String          @db.Uuid
+  ownerId                  String          @db.Uuid
+  product                  Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store                    Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  owner                    User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  posters Poster[]
+
+  @@index([productId, contentType])
+  @@index([storeId, contentType])
+  @@index([storeId, status])
+  @@index([ownerId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@index([storeId, totalTokens])
+  @@index([ownerId, estimatedCostUsd])
+  @@index([productId, contentType, version(sort: Desc)])
+  @@map("generated_contents")
+}
+
+model Poster {
+  id                         String           @id @default(uuid()) @db.Uuid
+  generationStatus           GenerationStatus @default(pending)
+  generationStartedAt        DateTime?
+  generationCompletedAt      DateTime?
+  failureReason              String?
+  failedAt                   DateTime?
+  posterUrl                  String?
+  storageProvider            StorageProvider?
+  storagePublicId            String?          @unique
+  storageBucket              String?
+  storageFolder              String?
+  storageVersion             Int?
+  storageEtag                String?
+  storageBytes               Int?
+  storageResourceType        String?
+  width                      Int
+  height                     Int
+  dimensionUnit              String           @default("px")
+  format                     PosterFormat      @default(jpeg)
+  size                       PosterSize        @default(square)
+  generationDurationMs       Int?
+  dalleRequestDurationMs     Int?
+  uploadDurationMs           Int?
+  generationRetryCount       Int              @default(0)
+  dalleModel                 String?
+  dalleQuality               String?
+  dalleStyle                 String?
+  generationEstimatedCostUsd Float?
+  totalDownloads             Int              @default(0)
+  promptSnapshot             String?
+  isPublic                   Boolean          @default(false)
+  isFavourited               Boolean          @default(false)
+  tags                       String[]         @default([])
+  title                      String?          @db.VarChar(255)
+  version                    Int              @default(1)
+  createdAt                  DateTime         @default(now())
+  editableUntil              DateTime         @default(dbgenerated("(now() + interval '5 days')"))
+  updatedAt                  DateTime         @updatedAt
+  productId                  String           @db.Uuid
+  generatedContentId         String           @db.Uuid
+  storeId                    String           @db.Uuid
+  ownerId                    String           @db.Uuid
+  parentPosterId             String?          @db.Uuid
+  product                    Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  generatedContent           GeneratedContent @relation(fields: [generatedContentId], references: [id], onDelete: Restrict)
+  store                      Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  owner                      User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  parentPoster               Poster?          @relation("PosterVersions", fields: [parentPosterId], references: [id], onDelete: SetNull)
+  childPosters               Poster[]         @relation("PosterVersions")
+
+  exports PosterExport[]
+
+  @@index([storeId, generationStatus])
+  @@index([storeId, createdAt(sort: Desc)])
+  @@index([productId])
+  @@index([productId, generationStatus])
+  @@index([generatedContentId])
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([ownerId, generationStatus])
+  @@index([generationStatus, generationStartedAt])
+  @@index([totalDownloads(sort: Desc)])
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@index([isFavourited, ownerId])
+  @@index([parentPosterId])
+  @@map("posters")
+}
+
+model PosterExport {
+  id          String       @id @default(uuid()) @db.Uuid
+  exportedAt  DateTime     @default(now())
+  format      PosterFormat
+  downloadUrl String
+  expiresAt   DateTime?
+  ipAddress   String?
+  posterId    String       @db.Uuid
+  poster      Poster       @relation(fields: [posterId], references: [id], onDelete: Cascade)
+
+  @@index([posterId, exportedAt(sort: Desc)])
+  @@index([format])
+  @@index([exportedAt(sort: Desc)])
+  @@map("poster_exports")
+}

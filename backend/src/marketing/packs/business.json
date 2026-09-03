@@ -1,0 +1,13 @@
+{
+  "name": "Business",
+  "matchTerms": ["business", "professional", "office", "work", "team", "productivity"],
+  "verbs": ["streamline", "organize", "present", "prepare", "support", "deliver"],
+  "adjectives": ["professional", "polished", "reliable", "efficient", "focused", "practical"],
+  "benefits": ["better workdays", "professional confidence", "organized routines", "reliable output"],
+  "cta": ["Work Smarter", "Upgrade The Office", "Choose Professional"],
+  "emotions": ["focused", "prepared", "confident"],
+  "audience": ["professionals", "remote workers", "teams"],
+  "features": ["work-ready design", "organized layout", "professional finish", "durable build"],
+  "headlineTemplates": ["Professional Confidence, Built In", "Work Smarter With {feature}", "Ready For Better Workdays"],
+  "descriptionTemplates": ["{feature} supports {audience} with {benefit} and a more {adjective} routine."]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Fashion",
+  "matchTerms": ["fashion", "dress", "shirt", "jacket", "style", "lipstick", "beauty"],
+  "verbs": ["style", "wear", "layer", "refresh", "express", "polish"],
+  "adjectives": ["chic", "flattering", "expressive", "polished", "seasonal", "wearable"],
+  "benefits": ["confident style", "effortless outfits", "fresh expression", "day-to-night polish"],
+  "cta": ["Shop The Look", "Refresh Your Style", "Find Your Finish"],
+  "emotions": ["confident", "expressive", "radiant"],
+  "audience": ["style seekers", "beauty lovers", "trendsetters"],
+  "features": ["flattering finish", "rich color", "soft texture", "polished detail"],
+  "headlineTemplates": ["Style That Feels {emotion}", "Wear More {benefit}", "The {adjective} Finish"],
+  "descriptionTemplates": ["A {adjective} detail helps {audience} create {benefit} with ease."]
+}

@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+backend/dist/
+
+# Environment variables
+.env
+.env.*
+frontend/.env
+backend/.env
+
+# Logs
+*.log
+
+# OS / Editor files
+.vscode/
+.DS_Store
+Thumbs.db
+# Local environment files
+frontend/.env
+backend/.env
+
+# Keep example files
+!frontend/.env.example
+!backend/.env.example

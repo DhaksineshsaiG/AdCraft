@@ -1,0 +1,13 @@
+{
+  "name": "Furniture",
+  "matchTerms": ["furniture", "chair", "desk", "office", "sofa", "home"],
+  "verbs": ["support", "settle", "organize", "furnish", "relax", "balance"],
+  "adjectives": ["ergonomic", "minimal", "comfortable", "supportive", "clean", "durable"],
+  "benefits": ["focused workdays", "lasting comfort", "calmer spaces", "better posture"],
+  "cta": ["Choose Better Support", "Shop Furniture", "Refresh Your Space"],
+  "emotions": ["focused", "settled", "comfortable"],
+  "audience": ["professionals", "remote workers", "homeowners"],
+  "features": ["ergonomic support", "adjustable height", "clean lines", "soft cushion"],
+  "headlineTemplates": ["Support That Works All Day", "Make Space For {benefit}", "Designed For {audience}"],
+  "descriptionTemplates": ["{feature} helps {audience} create {benefit} through a {adjective} setup."]
+}

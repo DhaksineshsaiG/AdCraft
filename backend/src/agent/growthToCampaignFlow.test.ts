@@ -5,6 +5,7 @@ const mockCampaignCreate = jest.fn();
 const mockCampaignUpdate = jest.fn();
 const mockCampaignFindUnique = jest.fn();
 const mockCampaignFindMany = jest.fn();
+const mockCampaignFindFirst = jest.fn();
 const mockGeneratedContentFindFirst = jest.fn();
 
 jest.mock('../database/prisma', () => ({
@@ -22,6 +23,7 @@ jest.mock('../database/prisma', () => ({
       update: mockCampaignUpdate,
       findUnique: mockCampaignFindUnique,
       findMany: mockCampaignFindMany,
+      findFirst: mockCampaignFindFirst,
     },
     generatedContent: {
       findFirst: mockGeneratedContentFindFirst,
@@ -77,6 +79,7 @@ describe('End-to-End Growth to Campaign Flow (Phase 1 + Phase 2)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCampaignFindFirst.mockResolvedValue(null);
     mockStoreFindUnique.mockResolvedValue(mockStore);
     mockProductFindMany.mockResolvedValue([mockProductRecord]);
     mockProductFindUnique.mockResolvedValue(mockProductRecord);

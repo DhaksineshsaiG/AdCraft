@@ -36,6 +36,17 @@ export interface VerifyPaymentResponse {
   alreadyVerified: boolean;
 }
 
+export interface SafePaymentRecord {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  verifiedAt?: string;
+  createdAt: string;
+}
+
 /**
  * Dynamically loads the Razorpay standard checkout.js script.
  */
@@ -80,6 +91,18 @@ export async function verifyCampaignPayment(
   const { data } = await api.post<ApiResponse<VerifyPaymentResponse>>(
     '/payments/verify',
     payload
+  );
+  return data.data;
+}
+
+/**
+ * Fetches safe payment records for a campaign from the backend.
+ */
+export async function getCampaignPayments(
+  campaignId: string
+): Promise<SafePaymentRecord[]> {
+  const { data } = await api.get<ApiResponse<SafePaymentRecord[]>>(
+    `/payments/campaigns/${campaignId}`
   );
   return data.data;
 }

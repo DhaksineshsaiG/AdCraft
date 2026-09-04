@@ -20,6 +20,7 @@ const ResetPasswordPage = lazy(() => import('@pages/auth/ResetPasswordPage'));
 
 // Dashboard pages (Phase 12+)
 const DashboardPage  = lazy(() => import('@pages/dashboard/DashboardPage'));
+const GrowthPage     = lazy(() => import('@pages/growth/GrowthPage'));
 const StoresPage     = lazy(() => import('@pages/stores/StoresPage')); 
 const ProductsPage   = lazy(() => import('@pages/products/ProductsPage')); 
 const PostersPage    = lazy(() => import('@pages/posters/PostersPage')); 
@@ -142,6 +143,14 @@ const router = createBrowserRouter([
           {
             path: '/dashboard',
             element: <Page component={DashboardPage} />,
+          },
+          {
+            path: '/growth',
+            element: <Page component={GrowthPage} />,
+          },
+          {
+            path: '/growth/:campaignId',
+            element: <Page component={GrowthPage} />,
           },
           {
             path: '/stores',

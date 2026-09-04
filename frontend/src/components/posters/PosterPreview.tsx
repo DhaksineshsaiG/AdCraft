@@ -361,7 +361,7 @@ export default function PosterPreview({
   }
 
   function selectLayer(layerId: string) {
-    selectLayer(layerId);
+    setSelectedLayerId(layerId);
     const layer = textLayers.find((item) => item.id === layerId);
     setImageUrlDraft(layer?.imageHref ?? '');
   }
@@ -426,28 +426,24 @@ export default function PosterPreview({
   const dialog = (
     <AnimatePresence>
       {poster && (
-        <>
+        <motion.div
+          key="poster-preview-root"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, pointerEvents: 'none' }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={onClose}
+        >
           {/* Backdrop */}
-          <motion.div
-            key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm"
-            onClick={onClose}
+          <div
+            className="fixed inset-0 bg-black/85 backdrop-blur-sm -z-10"
             aria-hidden="true"
           />
 
           {/* Panel */}
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Poster preview: ${poster.productName}`}
-          >
-            <motion.div
-              key={poster.id}
+          <motion.div
+            key={poster.id}
               initial={{ opacity: 0, scale: 0.93 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.93 }}
@@ -910,8 +906,7 @@ export default function PosterPreview({
                 </div>
               )}
             </motion.div>
-          </div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );

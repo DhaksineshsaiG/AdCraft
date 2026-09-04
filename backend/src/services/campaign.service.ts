@@ -89,7 +89,45 @@ export class CampaignService {
       payload.strategy?.trim() ||
       'Feature product with high-clarity promotional messaging and verified pricing.';
 
-    // 3. Create campaign in DRAFT state
+    // 3. Idempotency & duplicate protection:
+    // If a campaign for this exact store & product is already in PENDING_APPROVAL with a generated poster, reuse it!
+    const existingPendingCampaign = await prisma.campaign.findFirst({
+      where: {
+        storeId: store.id,
+        productId: product.id,
+        ownerId: requestingUserId,
+        status: 'pending_approval',
+        posterUrl: { not: null },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingPendingCampaign) {
+      console.info(
+        `[CampaignService] Existing PENDING_APPROVAL campaign found: ${existingPendingCampaign.id} for product ${product.id}. Reusing to prevent duplicate generation.`
+      );
+      return mapCampaign(existingPendingCampaign);
+    }
+
+    const currentlyGenerating = await prisma.campaign.findFirst({
+      where: {
+        storeId: store.id,
+        productId: product.id,
+        ownerId: requestingUserId,
+        status: 'generating',
+        createdAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (currentlyGenerating) {
+      console.info(
+        `[CampaignService] Campaign generation already in progress for product ${product.id}: ${currentlyGenerating.id}. Returning in-progress campaign.`
+      );
+      return mapCampaign(currentlyGenerating);
+    }
+
+    // 4. Create campaign in DRAFT state
     const draftCampaign = await prisma.campaign.create({
       data: {
         name: campaignName,

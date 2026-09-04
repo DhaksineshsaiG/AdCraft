@@ -6,6 +6,7 @@ const mockProductFindUnique = jest.fn();
 const mockCampaignCreate = jest.fn();
 const mockCampaignUpdate = jest.fn();
 const mockCampaignFindUnique = jest.fn();
+const mockCampaignFindFirst = jest.fn();
 const mockPaymentCreate = jest.fn();
 const mockPaymentUpdate = jest.fn();
 const mockPaymentFindFirst = jest.fn();
@@ -20,6 +21,7 @@ jest.mock('../database/prisma', () => ({
       create: mockCampaignCreate,
       update: mockCampaignUpdate,
       findUnique: mockCampaignFindUnique,
+      findFirst: mockCampaignFindFirst,
     },
     payment: {
       create: mockPaymentCreate,
@@ -93,6 +95,7 @@ describe('Track 01 — Full Agentic Commerce Pipeline (Phases 1, 2, 3)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCampaignFindFirst.mockResolvedValue(null);
     mockStoreFindUnique.mockResolvedValue(mockStore);
     mockProductFindMany.mockResolvedValue([mockProduct]);
     mockProductFindUnique.mockResolvedValue(mockProduct);

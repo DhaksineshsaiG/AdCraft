@@ -4,6 +4,7 @@ const mockCampaignCreate = jest.fn();
 const mockCampaignUpdate = jest.fn();
 const mockCampaignFindUnique = jest.fn();
 const mockCampaignFindMany = jest.fn();
+const mockCampaignFindFirst = jest.fn();
 const mockGeneratedContentFindFirst = jest.fn();
 
 jest.mock('../database/prisma', () => ({
@@ -20,6 +21,7 @@ jest.mock('../database/prisma', () => ({
       update: mockCampaignUpdate,
       findUnique: mockCampaignFindUnique,
       findMany: mockCampaignFindMany,
+      findFirst: mockCampaignFindFirst,
     },
     generatedContent: {
       findFirst: mockGeneratedContentFindFirst,
@@ -51,10 +53,38 @@ describe('CampaignService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCampaignFindFirst.mockResolvedValue(null);
     service = new CampaignService();
   });
 
   describe('createCampaign', () => {
+    test('reuses existing PENDING_APPROVAL campaign to prevent duplicate generation', async () => {
+      const store = { id: storeId, name: 'My Store', ownerId, isArchived: false };
+      const product = { id: productId, storeId, ownerId, name: 'Shoes' };
+      const existingCampaign = {
+        id: 'existing-camp-123',
+        name: 'Campaign — Shoes',
+        status: 'pending_approval',
+        posterUrl: 'https://cdn.example.com/poster.png',
+        storeId,
+        productId,
+        ownerId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockStoreFindUnique.mockResolvedValue(store);
+      mockProductFindUnique.mockResolvedValue(product);
+      mockCampaignFindFirst.mockResolvedValue(existingCampaign);
+
+      const result = await service.createCampaign({ storeId, productId }, ownerId);
+
+      expect(result.id).toBe('existing-camp-123');
+      expect(result.status).toBe('pending_approval');
+      // Verify no new draft was created
+      expect(mockCampaignCreate).not.toHaveBeenCalled();
+    });
+
     test('throws NotFoundError if store does not exist', async () => {
       mockStoreFindUnique.mockResolvedValue(null);
 

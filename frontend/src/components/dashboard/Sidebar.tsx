@@ -36,6 +36,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard',          path: '/dashboard', icon: LayoutDashboard },
+  { label: 'AI Growth',          path: '/growth',    icon: Zap, badge: 'Agent' },
   { label: 'Stores',             path: '/stores',    icon: Store            },
   { label: 'Products',           path: '/products',  icon: Package          },
   { label: 'Posters',            path: '/posters',   icon: Image            },

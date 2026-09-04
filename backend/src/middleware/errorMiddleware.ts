@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { Prisma } from '@prisma/client';
 import { env } from '../config/env';
@@ -176,12 +176,25 @@ export function errorHandler(
   const raw = err as unknown as Record<string, unknown>;
   const isProd = env.NODE_ENV === 'production';
 
+  // Always log the actual raw error with stack to server logs for debugging
+  console.error('[ErrorMiddleware] Uncaught exception in request:', {
+    message: err.message,
+    name: err.name,
+    stack: err.stack,
+    path: req.originalUrl,
+    method: req.method,
+  });
+
+  const isCustomError =
+    err instanceof AppError ||
+    (err && typeof (err as any).statusCode === 'number');
+
   // Attempt to normalize known third-party errors into AppErrors
   let normalizedError: AppError =
     normalizePrismaError(err) ??
     normalizeJWTError(raw) ??
-    (err instanceof AppError
-      ? err
+    (isCustomError
+      ? (err as AppError)
       : new AppError(
           isProd ? 'An unexpected error occurred.' : err.message,
           StatusCodes.INTERNAL_SERVER_ERROR,

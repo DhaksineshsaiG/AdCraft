@@ -46,12 +46,20 @@ export class RendererV2 {
     const builder = new SVGBuilder(input.canvas);
     this.validator.assertValid('region planning', this.validator.validateRegions(input.canvas, regions));
 
-    builder.addFragment(this.backgroundRenderer.render(input.design, {
-      x: 0,
-      y: 0,
-      width: canvas.width,
-      height: canvas.height,
-    }, builder, input.template));
+    builder.addFragment(wrapEditorLayer(
+      this.backgroundRenderer.render(input.design, {
+        x: 0,
+        y: 0,
+        width: canvas.width,
+        height: canvas.height,
+      }, builder, input.template),
+      {
+        id: 'background',
+        type: 'background',
+        label: 'Background',
+        region: { x: 0, y: 0, width: canvas.width, height: canvas.height },
+      }
+    ));
     const protectedRegions = [
       regions.imageRegion,
       regions.headlineRegion,
@@ -60,35 +68,87 @@ export class RendererV2 {
       regions.ctaRegion,
     ];
     const decorations = this.decorationRenderer.render(input.design, regions.decorationRegions, builder, protectedRegions, input.template);
+    const decorationRegion = boundingBox(regions.decorationRegions, {
+      x: 0,
+      y: 0,
+      width: canvas.width,
+      height: canvas.height,
+    });
+    const wrappedDecorations = wrapEditorLayer(decorations, {
+      id: 'decorations',
+      type: 'decoration',
+      label: 'Decorations',
+      region: decorationRegion,
+    });
     if (input.design.decorations.depth !== 'foreground') {
-      builder.addFragment(decorations);
+      builder.addFragment(wrappedDecorations);
     }
-    builder.addFragment(this.productRenderer.render(input.design, regions.imageRegion, {
-      imageUrl: input.content.productImageUrl,
-      altText: input.content.productImageAlt,
-    }, builder, input.template));
+    builder.addFragment(wrapEditorLayer(
+      this.productRenderer.render(input.design, regions.imageRegion, {
+        imageUrl: input.content.productImageUrl,
+        altText: input.content.productImageAlt,
+      }, builder, input.template),
+      {
+        id: 'product_image',
+        type: 'product_image',
+        label: 'Product Image',
+        region: regions.imageRegion,
+      }
+    ));
     builder.addFragment(this.renderTextCard(input.design, regions.safeZones.text, input.template));
-    builder.addFragment(this.typographyRenderer.renderHeadline(
-      input.design,
-      regions.headlineRegion,
-      input.content.headline,
-      input.template
+    builder.addFragment(wrapEditorLayer(
+      this.typographyRenderer.renderHeadline(
+        input.design,
+        regions.headlineRegion,
+        input.content.headline,
+        input.template
+      ),
+      {
+        id: 'headline',
+        type: 'headline',
+        label: 'Headline',
+        region: regions.headlineRegion,
+      }
     ));
-    builder.addFragment(this.typographyRenderer.renderDescription(
-      input.design,
-      regions.descriptionRegion,
-      input.content.description ?? '',
-      input.template
+    builder.addFragment(wrapEditorLayer(
+      this.typographyRenderer.renderDescription(
+        input.design,
+        regions.descriptionRegion,
+        input.content.description ?? '',
+        input.template
+      ),
+      {
+        id: 'description',
+        type: 'description',
+        label: 'Description',
+        region: regions.descriptionRegion,
+      }
     ));
-    builder.addFragment(this.typographyRenderer.renderPrice(
-      input.design,
-      regions.priceRegion,
-      input.content.price,
-      input.template
+    builder.addFragment(wrapEditorLayer(
+      this.typographyRenderer.renderPrice(
+        input.design,
+        regions.priceRegion,
+        input.content.price,
+        input.template
+      ),
+      {
+        id: 'price',
+        type: 'price',
+        label: 'Price',
+        region: regions.priceRegion,
+      }
     ));
-    builder.addFragment(this.ctaRenderer.render(input.design, regions.ctaRegion, input.content.cta, input.template));
+    builder.addFragment(wrapEditorLayer(
+      this.ctaRenderer.render(input.design, regions.ctaRegion, input.content.cta, input.template),
+      {
+        id: 'cta',
+        type: 'cta',
+        label: 'CTA',
+        region: regions.ctaRegion,
+      }
+    ));
     if (input.design.decorations.depth === 'foreground') {
-      builder.addFragment(decorations);
+      builder.addFragment(wrappedDecorations);
     }
 
     const svg = builder.build();
@@ -129,6 +189,48 @@ export class RendererV2 {
       '</g>',
     ].join('');
   }
+}
+
+function wrapEditorLayer(
+  markup: string,
+  layer: {
+    id: string;
+    type: string;
+    label: string;
+    region: { x: number; y: number; width: number; height: number };
+  }
+): string {
+  if (!markup || !markup.trim()) {
+    return '';
+  }
+
+  return [
+    `<g data-editor-layer="true"`,
+    `data-layer-id="${escapeSvg(layer.id)}"`,
+    `data-layer-type="${escapeSvg(layer.type)}"`,
+    `data-layer-label="${escapeSvg(layer.label)}"`,
+    `data-layer-x="${formatNumber(layer.region.x)}"`,
+    `data-layer-y="${formatNumber(layer.region.y)}"`,
+    `data-layer-width="${formatNumber(layer.region.width)}"`,
+    `data-layer-height="${formatNumber(layer.region.height)}"`,
+    '>',
+    markup,
+    '</g>',
+  ].join(' ');
+}
+
+function boundingBox(regions: Region[], fallback: Region): Region {
+  if (!regions || regions.length === 0) return fallback;
+  const minX = Math.min(...regions.map((r) => r.x));
+  const minY = Math.min(...regions.map((r) => r.y));
+  const maxX = Math.max(...regions.map((r) => r.x + r.width));
+  const maxY = Math.max(...regions.map((r) => r.y + r.height));
+  return {
+    x: minX,
+    y: minY,
+    width: Math.max(0, maxX - minX),
+    height: Math.max(0, maxY - minY),
+  };
 }
 
 export default RendererV2;

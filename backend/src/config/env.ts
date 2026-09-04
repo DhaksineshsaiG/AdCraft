@@ -77,6 +77,9 @@ interface EnvConfig {
   RATE_LIMIT_WINDOW_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
 
+  // Poster Renderer
+  POSTER_RENDERER_VERSION: 'v1' | 'v2';
+
   // Logging
   LOG_LEVEL: string;
   LOG_DIR: string;
@@ -127,6 +130,12 @@ function parseContentProvider(value: string): 'ollama' | 'marketing' {
   if (value === 'ollama' || value === 'marketing') return value;
   console.warn(`[ENV] CONTENT_PROVIDER="${value}" is not recognized. Defaulting to "ollama".`);
   return 'ollama';
+}
+
+function parsePosterRendererVersion(value: string): 'v1' | 'v2' {
+  if (value === 'v1' || value === 'v2') return value;
+  console.warn(`[ENV] POSTER_RENDERER_VERSION="${value}" is not recognized. Defaulting to "v1".`);
+  return 'v1';
 }
 
 // ─── Build & Validate Config ──────────────────────────────────────────────────
@@ -211,6 +220,9 @@ function buildEnvConfig(): EnvConfig {
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: requireNumber('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000), // 15 minutes
     RATE_LIMIT_MAX_REQUESTS: requireNumber('RATE_LIMIT_MAX_REQUESTS', 100),
+
+    // Poster Renderer
+    POSTER_RENDERER_VERSION: parsePosterRendererVersion(optionalEnv('POSTER_RENDERER_VERSION', 'v1')),
 
     // Logging
     LOG_LEVEL: optionalEnv('LOG_LEVEL', nodeEnv === 'production' ? 'warn' : 'debug'),

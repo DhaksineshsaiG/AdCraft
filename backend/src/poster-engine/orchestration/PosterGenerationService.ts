@@ -39,6 +39,8 @@ import {
   buildPosterDesignInput,
   logPosterDesignDecision,
 } from './PosterDesignIntegration';
+import { env } from '../../config/env';
+import { PosterV2RendererAdapter } from '../../poster-renderer-v2';
 
 export interface GeneratePosterFromTemplateInput {
   productId: string;
@@ -50,6 +52,7 @@ export interface GeneratePosterFromTemplateInput {
   size?: PosterSize;
   output?: SharpRenderOptions;
   save?: boolean;
+  rendererVersion?: 'v1' | 'v2';
 }
 
 export interface GeneratePosterFromTemplateResult {
@@ -62,6 +65,7 @@ export interface GeneratePosterFromTemplateResult {
     generatedContentId: string;
     templateId: string;
     templateVersion: string;
+    rendererVersion: 'v1' | 'v2';
     width: number;
     height: number;
     bytes: number;
@@ -83,6 +87,7 @@ export interface PosterGenerationServiceDependencies {
   persistence: PosterGenerationPersistence;
   imageEnhancer: PosterImageEnhancer;
   posterDesignComposer: PosterDesignComposer;
+  v2RendererAdapter?: PosterV2RendererAdapter;
 }
 
 const CONTENT_TYPE_PREFERENCE: ContentType[] = [
@@ -122,11 +127,53 @@ export class PosterGenerationService {
       canvas: input.template.dimensions,
       posterDesignDecision,
     });
-    const svg = this.dependencies.svgBuilder.build(layout);
-    const renderStartedAt = Date.now();
-    const pngBuffer = await this.dependencies.renderer.renderPng(svg, input.output);
-    const renderDurationMs = Date.now() - renderStartedAt;
-    console.log(`Poster Generation Time: ${Date.now() - startedAt}ms`);
+
+    const requestedVersion = input.rendererVersion ?? env.POSTER_RENDERER_VERSION;
+    let activeRendererVersion: 'v1' | 'v2' = 'v1';
+    let svg = '';
+    let pngBuffer: Buffer = Buffer.alloc(0);
+    let renderDurationMs = 0;
+
+    const buildV1 = async () => {
+      activeRendererVersion = 'v1';
+      const v1Svg = this.dependencies.svgBuilder.build(layout);
+      const renderStartedAt = Date.now();
+      const v1PngBuffer = await this.dependencies.renderer.renderPng(v1Svg, input.output);
+      renderDurationMs = Date.now() - renderStartedAt;
+      svg = v1Svg;
+      pngBuffer = v1PngBuffer;
+    };
+
+    if (
+      requestedVersion === 'v2' &&
+      posterDesignDecision &&
+      this.dependencies.v2RendererAdapter
+    ) {
+      try {
+        const v2Svg = this.dependencies.v2RendererAdapter.render({
+          posterData,
+          posterDesignDecision,
+          canvas: input.template.dimensions,
+          template: input.template,
+        });
+        const renderStartedAt = Date.now();
+        const v2PngBuffer = await this.dependencies.renderer.renderPng(v2Svg, input.output);
+        renderDurationMs = Date.now() - renderStartedAt;
+        svg = v2Svg;
+        pngBuffer = v2PngBuffer;
+        activeRendererVersion = 'v2';
+      } catch (error) {
+        console.warn(
+          `[PosterGenerationService] Renderer V2 failed; falling back to Renderer V1: ${getErrorMessage(error)}`,
+          error
+        );
+        await buildV1();
+      }
+    } else {
+      await buildV1();
+    }
+
+    console.log(`Poster Generation Time: ${Date.now() - startedAt}ms (Engine: ${activeRendererVersion})`);
 
     let poster: IPosterDocument | undefined;
     let storage: StoredPosterOutput | undefined;
@@ -170,7 +217,7 @@ export class PosterGenerationService {
             retryCount: 0,
             estimatedCostUsd: 0,
           },
-          promptSnapshot: buildPromptSnapshot(input.template, content, layout, svg),
+          promptSnapshot: buildPromptSnapshot(input.template, content, layout, svg, activeRendererVersion),
         });
         await this.dependencies.persistence.recordContentUsage(content, poster);
       } catch (error) {
@@ -189,6 +236,7 @@ export class PosterGenerationService {
         generatedContentId: content._id.toString(),
         templateId: input.template.id,
         templateVersion: input.template.version,
+        rendererVersion: activeRendererVersion,
         width: layout.canvas.width,
         height: layout.canvas.height,
         bytes: pngBuffer.length,
@@ -266,6 +314,7 @@ export function createDefaultPosterGenerationService(): PosterGenerationService 
     persistence: new PrismaPosterGenerationPersistence(),
     imageEnhancer: new DefaultPosterImageEnhancer(),
     posterDesignComposer: new PosterDesignComposer(),
+    v2RendererAdapter: new PosterV2RendererAdapter(),
   });
 }
 
@@ -303,10 +352,12 @@ function buildPromptSnapshot(
   template: PosterTemplate,
   content: IGeneratedContentDocument,
   layout: PosterLayout,
-  svg: string
+  svg: string,
+  rendererVersion: 'v1' | 'v2' = 'v1'
 ): string {
   return JSON.stringify({
     pipeline: 'poster-engine',
+    rendererVersion,
     templateId: template.id,
     templateVersion: template.version,
     generatedContentId: content._id.toString(),

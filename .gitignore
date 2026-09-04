@@ -22,6 +22,7 @@ backend/.env
 .vscode/
 .DS_Store
 Thumbs.db
+backend/tmp/v2-visual-audit/
 # Local environment files
 frontend/.env
 backend/.env

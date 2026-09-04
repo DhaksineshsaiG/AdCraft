@@ -41,7 +41,7 @@ function usePageTitle(): string {
   return (
     ROUTE_TITLES[pathname] ??
     Object.entries(ROUTE_TITLES).find(([path]) => pathname.startsWith(path))?.[1] ??
-    'PosterAI'
+    'AdCraft'
   );
 }
 
@@ -155,9 +155,15 @@ const NOTIFICATION_ICON_CONFIG: Record<AppNotification['icon'], {
   },
 };
 
-function NotificationPanel({ onClose }: { onClose: () => void }) {
+interface NotificationPanelProps {
+  onClose: () => void;
+  notifications: AppNotification[];
+  unreadCount: number;
+  markRead: (id: string) => void;
+}
+
+function NotificationPanel({ onClose, notifications, unreadCount, markRead }: NotificationPanelProps) {
   const navigate = useNavigate();
-  const { notifications, unreadCount, markRead } = useNotifications();
   const latestNotifications = notifications.slice(0, 5);
 
   return (
@@ -230,7 +236,7 @@ export default function Navbar({ onMobileMenuClick }: NavbarProps) {
   const title = usePageTitle();
   const { dark, toggle: toggleTheme } = useTheme();
   const { user } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { notifications, unreadCount, markRead } = useNotifications();
 
   const [userOpen, setUserOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -303,7 +309,15 @@ export default function Navbar({ onMobileMenuClick }: NavbarProps) {
             )}
           </button>
           <AnimatePresence>
-            {notifOpen && <NotificationPanel key="notif" onClose={() => setNotifOpen(false)} />}
+            {notifOpen && (
+              <NotificationPanel
+                key="notif"
+                onClose={() => setNotifOpen(false)}
+                notifications={notifications}
+                unreadCount={unreadCount}
+                markRead={markRead}
+              />
+            )}
           </AnimatePresence>
         </div>
 

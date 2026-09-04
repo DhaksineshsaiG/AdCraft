@@ -52,7 +52,7 @@ export class RendererV2 {
         y: 0,
         width: canvas.width,
         height: canvas.height,
-      }, builder, input.template),
+      }, builder, input.template, regions.imageRegion),
       {
         id: 'background',
         type: 'background',

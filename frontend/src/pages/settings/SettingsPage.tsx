@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -223,7 +223,7 @@ export default function SettingsPage() {
           <motion.div variants={motionFadeUp}>
             <SettingsSection
               title="Appearance"
-              description="Choose how PosterAI looks on your device"
+              description="Choose how AdCraft looks on your device"
             >
               <div
                 role="radiogroup"

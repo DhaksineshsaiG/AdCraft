@@ -63,7 +63,13 @@ export function createApp(): Application {
         // Allow requests with no origin (mobile apps, curl, Postman)
         if (!origin) return callback(null, true);
 
-        if (env.ALLOWED_ORIGINS.includes(origin) || env.NODE_ENV === 'development') {
+        const isVercel = typeof origin === 'string' && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'));
+        if (
+          env.ALLOWED_ORIGINS.includes('*') ||
+          env.ALLOWED_ORIGINS.includes(origin) ||
+          isVercel ||
+          env.NODE_ENV === 'development'
+        ) {
           callback(null, true);
         } else {
           callback(new Error(`CORS: Origin "${origin}" is not allowed.`));

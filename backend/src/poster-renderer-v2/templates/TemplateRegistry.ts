@@ -23,6 +23,9 @@ interface TemplateSeed {
   gradient?: RendererTemplateProfile['gradientPreset']['direction'];
   layerMode?: RendererTemplateProfile['decorationPreset']['layerMode'];
   imageFocus?: RendererTemplateProfile['imageEmphasis']['focus'];
+  compositionMode?: RendererTemplateProfile['compositionMode'];
+  typographyPersonality?: RendererTemplateProfile['typographyPersonality'];
+  productBacking?: RendererTemplateProfile['productBacking'];
   base?: number;
   accent?: number;
 }
@@ -35,9 +38,12 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     card: 'glass',
     gradient: 'spotlight',
     layerMode: 'ornamental',
-    imageFocus: 'detail',
+    imageFocus: 'hero',
     density: 'airy',
     accent: 1.18,
+    compositionMode: 'framed-product',
+    typographyPersonality: 'editorial-serif',
+    productBacking: 'arch',
   },
   Technology: {
     shape: 'soft',
@@ -49,6 +55,9 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     imageFocus: 'hero',
     density: 'balanced',
     accent: 1.08,
+    compositionMode: 'product-dominant',
+    typographyPersonality: 'modern-sans',
+    productBacking: 'halo',
   },
   Sports: {
     shape: 'sharp',
@@ -60,6 +69,9 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     imageFocus: 'hero',
     density: 'dramatic',
     accent: 1.22,
+    compositionMode: 'product-dominant',
+    typographyPersonality: 'bold-display',
+    productBacking: 'none',
   },
   Fashion: {
     shape: 'soft',
@@ -71,6 +83,9 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     imageFocus: 'balanced',
     density: 'airy',
     accent: 1.06,
+    compositionMode: 'product-right',
+    typographyPersonality: 'editorial-serif',
+    productBacking: 'card',
   },
   Coffee: {
     shape: 'rounded',
@@ -82,6 +97,9 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     imageFocus: 'balanced',
     density: 'balanced',
     accent: 1,
+    compositionMode: 'product-center',
+    typographyPersonality: 'editorial-serif',
+    productBacking: 'halo',
   },
   Furniture: {
     shape: 'soft',
@@ -93,6 +111,9 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     imageFocus: 'balanced',
     density: 'airy',
     accent: 0.96,
+    compositionMode: 'product-left',
+    typographyPersonality: 'modern-sans',
+    productBacking: 'pedestal',
   },
   Electronics: {
     shape: 'soft',
@@ -104,6 +125,9 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     imageFocus: 'hero',
     density: 'balanced',
     accent: 1.05,
+    compositionMode: 'product-dominant',
+    typographyPersonality: 'modern-sans',
+    productBacking: 'halo',
   },
   Jewelry: {
     shape: 'pill',
@@ -115,6 +139,9 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     imageFocus: 'detail',
     density: 'airy',
     accent: 1.16,
+    compositionMode: 'framed-product',
+    typographyPersonality: 'editorial-serif',
+    productBacking: 'arch',
   },
   Minimal: {
     shape: 'soft',
@@ -123,9 +150,12 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     card: 'none',
     gradient: 'vertical',
     layerMode: 'quiet',
-    imageFocus: 'balanced',
+    imageFocus: 'hero',
     density: 'airy',
     accent: 0.88,
+    compositionMode: 'product-center',
+    typographyPersonality: 'modern-sans',
+    productBacking: 'pedestal',
   },
   Editorial: {
     shape: 'sharp',
@@ -134,9 +164,12 @@ const COLLECTION_DEFAULTS: Record<TemplateCollection, Partial<TemplateSeed>> = {
     card: 'outline',
     gradient: 'horizontal',
     layerMode: 'editorial',
-    imageFocus: 'supporting',
+    imageFocus: 'hero',
     density: 'compact',
     accent: 1.04,
+    compositionMode: 'product-bottom',
+    typographyPersonality: 'editorial-serif',
+    productBacking: 'card',
   },
 };
 
@@ -157,7 +190,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
   seed('fashion-lookbook-white', 'Lookbook White', 'Fashion', ['fashion', 'apparel'], ['new arrival'], ['clean', 'refined'], { card: 'none', density: 'airy' }),
   seed('fashion-after-dark', 'After Dark Editorial', 'Fashion', ['fashion', 'perfume'], ['premium'], ['bold', 'editorial'], { gradient: 'spotlight', fill: 'outline', accent: 1.18 }),
 
-  seed('coffee-roastery-warmth', 'Roastery Warmth', 'Coffee', ['coffee', 'mug', 'espresso'], ['winter'], ['warm', 'cozy']),
+  seed('coffee-roastery-warmth', 'Roastery Warmth', 'Coffee', ['coffee', 'mug', 'espresso'], ['winter'], ['warm', 'cozy'], { compositionMode: 'product-center', typographyPersonality: 'editorial-serif', productBacking: 'halo' }),
   seed('coffee-morning-paper', 'Morning Paper', 'Coffee', ['coffee', 'breakfast'], ['default'], ['friendly', 'editorial'], { layerMode: 'editorial', card: 'outline' }),
   seed('coffee-artisan-shelf', 'Artisan Shelf', 'Coffee', ['coffee', 'home'], ['premium'], ['calm', 'warm'], { card: 'elevated', gradient: 'horizontal' }),
 
@@ -165,8 +198,8 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
   seed('furniture-living-room', 'Living Room Spread', 'Furniture', ['furniture', 'home'], ['winter'], ['balanced', 'warm'], { gradient: 'radial', card: 'solid' }),
   seed('furniture-modern-loft', 'Modern Loft', 'Furniture', ['furniture', 'decor'], ['new arrival'], ['modern', 'clean'], { card: 'outline', fill: 'outline' }),
 
-  seed('electronics-glass-launch', 'Glass Launch', 'Electronics', ['electronics', 'phone', 'audio'], ['new arrival'], ['technology', 'modern']),
-  seed('electronics-product-lab', 'Product Lab', 'Electronics', ['electronics', 'gadget'], ['minimal'], ['clean', 'minimal'], { card: 'none', gradient: 'vertical' }),
+  seed('electronics-glass-launch', 'Glass Launch', 'Electronics', ['electronics', 'phone', 'audio', 'headphones'], ['new arrival'], ['technology', 'modern'], { compositionMode: 'product-dominant', typographyPersonality: 'modern-sans', productBacking: 'halo' }),
+  seed('electronics-product-lab', 'Product Lab', 'Electronics', ['electronics', 'gadget', 'headphones', 'audio'], ['minimal'], ['clean', 'minimal'], { compositionMode: 'framed-product', typographyPersonality: 'modern-sans', productBacking: 'pedestal', card: 'outline' }),
   seed('electronics-blueprint', 'Blueprint Circuit', 'Electronics', ['electronics', 'technology'], ['black friday'], ['bold', 'technical'], { layerMode: 'motion', density: 'dramatic' }),
 
   seed('jewelry-gold-frame', 'Gold Frame', 'Jewelry', ['jewelry', 'necklace', 'ring'], ['luxury'], ['elegant', 'premium']),
@@ -300,6 +333,9 @@ function createTemplate(seedData: TemplateSeed): RendererTemplateProfile {
       industryPacks: seedData.industryPacks ?? [],
       posterSizes: seedData.posterSizes ?? [],
     },
+    compositionMode: seedData.compositionMode ?? defaults.compositionMode ?? 'product-center',
+    typographyPersonality: seedData.typographyPersonality ?? defaults.typographyPersonality ?? 'modern-sans',
+    productBacking: seedData.productBacking ?? defaults.productBacking ?? 'none',
   };
 }
 

@@ -705,6 +705,106 @@
   .line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
   .line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+
+  /* ── Brand Logo Ambient Glow (Dark Mode) ─────────────────────────────────── */
+  .brand-logo-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brand-logo {
+    position: relative;
+    z-index: 1;
+    filter: none;
+    transition: filter 200ms ease;
+  }
+
+  .dark .brand-logo-wrapper {
+    isolation: isolate;
+  }
+
+  .dark .brand-logo-wrapper::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(99, 102, 241, 0.28) 0%,
+      rgba(139, 92, 246, 0.14) 35%,
+      transparent 70%
+    );
+    filter: blur(8px);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .dark .brand-logo {
+    filter:
+      drop-shadow(0 0 4px rgba(99, 102, 241, 0.65))
+      drop-shadow(0 0 10px rgba(59, 130, 246, 0.25));
+  }
+
+  .dark .brand-logo-wrapper:hover .brand-logo {
+    filter:
+      drop-shadow(0 0 6px rgba(139, 92, 246, 0.8))
+      drop-shadow(0 0 14px rgba(59, 130, 246, 0.35));
+    transition: filter 200ms ease;
+  }
+
+  /* Intensity Variant: High (Collapsed Sidebar) */
+  .dark .brand-logo-glow-high::before,
+  .dark .collapsed-brand .brand-logo-wrapper::before {
+    inset: -10px;
+    background: radial-gradient(
+      circle,
+      rgba(99, 102, 241, 0.36) 0%,
+      rgba(139, 92, 246, 0.20) 40%,
+      transparent 70%
+    );
+    filter: blur(9px);
+    opacity: 0.9;
+  }
+
+  /* Intensity Variant: Subtle (Auth Pages) */
+  .dark .brand-logo-glow-subtle::before {
+    inset: -6px;
+    background: radial-gradient(
+      circle,
+      rgba(99, 102, 241, 0.20) 0%,
+      rgba(139, 92, 246, 0.10) 35%,
+      transparent 70%
+    );
+    filter: blur(6px);
+    opacity: 0.75;
+  }
+
+  .dark .brand-logo-glow-subtle .brand-logo {
+    filter:
+      drop-shadow(0 0 3px rgba(99, 102, 241, 0.45))
+      drop-shadow(0 0 8px rgba(59, 130, 246, 0.18));
+  }
+
+  /* Intensity Variant: Loader (Session Loader & PageDataLoader) */
+  .dark .brand-logo-glow-loader::before {
+    inset: -12px;
+    background: radial-gradient(
+      circle,
+      rgba(99, 102, 241, 0.32) 0%,
+      rgba(139, 92, 246, 0.18) 40%,
+      transparent 70%
+    );
+    filter: blur(10px);
+    opacity: 0.85;
+  }
+
+  .dark .brand-logo-glow-loader .brand-logo {
+    filter:
+      drop-shadow(0 0 5px rgba(99, 102, 241, 0.7))
+      drop-shadow(0 0 12px rgba(59, 130, 246, 0.3));
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

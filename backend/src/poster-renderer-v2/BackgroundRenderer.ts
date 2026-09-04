@@ -4,7 +4,7 @@ import { escapeSvg, formatNumber, rectAttrs, SVGBuilder } from './SVGBuilder';
 import type { RendererTemplateProfile } from './templates/TemplateTypes';
 
 export class BackgroundRenderer {
-  render(decision: PosterDesignDecision, region: Region, builder: SVGBuilder, template?: RendererTemplateProfile): string {
+  render(decision: PosterDesignDecision, region: Region, builder: SVGBuilder, template?: RendererTemplateProfile, productRegion?: Region): string {
     const baseGradientId = builder.nextId('renderer2-bg');
     const depthGradientId = builder.nextId('renderer2-depth');
     const radialLightId = builder.nextId('renderer2-light');
@@ -14,6 +14,13 @@ export class BackgroundRenderer {
     const vignetteOpacity = Math.min(0.48, (decision.background.vignette / 55) * (template?.gradientPreset.vignetteStrength ?? 1));
     const noiseOpacity = Math.min(0.22, (decision.background.noise / 42) * (template?.gradientPreset.textureIntensity ?? 1));
     const lightOpacity = lightStrength(decision.background.lighting) * (template?.gradientPreset.lighting ?? 0.52) / 0.52;
+
+    const lightCx = productRegion
+      ? `${formatNumber(((productRegion.x + productRegion.width / 2) / region.width) * 100)}%`
+      : lightCenter(decision.background.lighting);
+    const lightCy = productRegion
+      ? `${formatNumber(((productRegion.y + productRegion.height / 2) / region.height) * 100)}%`
+      : '48%';
 
     builder.addDef(
       `<linearGradient id="${baseGradientId}" ${gradientVector(template?.gradientPreset.direction ?? 'diagonal')}>` +
@@ -28,9 +35,10 @@ export class BackgroundRenderer {
       `</linearGradient>`
     );
     builder.addDef(
-      `<radialGradient id="${radialLightId}" cx="${lightCenter(decision.background.lighting)}" cy="28%" r="68%">` +
-        `<stop offset="0%" stop-color="${escapeSvg(decision.colors.decorative)}" stop-opacity="${formatNumber(lightOpacity)}" />` +
-        `<stop offset="56%" stop-color="${escapeSvg(decision.colors.surface)}" stop-opacity="0.12" />` +
+      `<radialGradient id="${radialLightId}" cx="${lightCx}" cy="${lightCy}" r="62%">` +
+        `<stop offset="0%" stop-color="${escapeSvg(decision.colors.decorative)}" stop-opacity="${formatNumber(Math.min(0.58, lightOpacity * 1.2))}" />` +
+        `<stop offset="45%" stop-color="${escapeSvg(decision.colors.surface)}" stop-opacity="${formatNumber(lightOpacity * 0.35)}" />` +
+        `<stop offset="82%" stop-color="${escapeSvg(decision.colors.background)}" stop-opacity="0.04" />` +
         `<stop offset="100%" stop-color="${escapeSvg(decision.colors.background)}" stop-opacity="0" />` +
       `</radialGradient>`
     );
@@ -55,7 +63,7 @@ export class BackgroundRenderer {
       this.renderDepthLayers(decision, region, template),
       `<rect ${rectAttrs(region)} fill="url(#${radialLightId})" opacity="${formatNumber(0.58 + decision.background.blur / 55)}" />`,
       `<rect ${rectAttrs(region)} fill="url(#${textureId})" opacity="${formatNumber(textureOpacity(decision.background.texture, decision.background.noise))}" />`,
-      this.renderParticles(decision, region, particleOpacity, template),
+      this.renderArchitecturalAccents(decision, region, particleOpacity, template, productRegion),
       `<rect ${rectAttrs(region)} fill="${escapeSvg(decision.colors.surface)}" opacity="${formatNumber(overlayOpacity(decision.background.overlay))}" />`,
       `<rect ${rectAttrs(region)} fill="url(#${vignetteId})" />`,
       `<rect ${rectAttrs(region)} fill="none" stroke="${escapeSvg(decision.colors.border)}" stroke-width="2" opacity="0.24" />`,
@@ -89,19 +97,28 @@ export class BackgroundRenderer {
     }).join('');
   }
 
-  private renderParticles(decision: PosterDesignDecision, region: Region, opacity: number, template?: RendererTemplateProfile): string {
-    const baseCount = decision.background.visualWeight === 'light' ? 8 : decision.background.visualWeight === 'cinematic' ? 22 : 14;
-    const count = Math.max(4, Math.round(baseCount * (template?.gradientPreset.particleDensity ?? 1)));
-    const particles = Array.from({ length: count }, (_, index) => {
-      const x = region.x + region.width * (((index * 37) % 100) / 100);
-      const y = region.y + region.height * (((index * 61 + 17) % 100) / 100);
-      const radius = 1.3 + (index % 5) * 0.75;
-      const color = index % 3 === 0 ? decision.colors.accent : decision.colors.decorative;
+  private renderArchitecturalAccents(
+    decision: PosterDesignDecision,
+    region: Region,
+    opacity: number,
+    template?: RendererTemplateProfile,
+    _productRegion?: Region
+  ): string {
+    const margin = Math.round(Math.min(region.width, region.height) * 0.045);
+    const stroke = escapeSvg(decision.colors.border || decision.colors.decorative);
+    const cornerTick = Math.max(14, Math.min(28, Math.round(margin * 0.65)));
+    const framingOpacity = Math.min(0.22, Math.max(0.06, opacity * 0.75 * (template?.decorationPreset.intensity ?? 1)));
 
-      return `<circle cx="${formatNumber(x)}" cy="${formatNumber(y)}" r="${formatNumber(radius)}" fill="${escapeSvg(color)}" opacity="${formatNumber(opacity * (0.45 + (index % 4) * 0.12))}" />`;
-    }).join('');
+    const cornerTicks = [
+      `<path d="M ${margin} ${margin + cornerTick} L ${margin} ${margin} L ${margin + cornerTick} ${margin}" fill="none" stroke="${stroke}" stroke-width="1" opacity="${formatNumber(framingOpacity * 1.5)}" />`,
+      `<path d="M ${region.width - margin - cornerTick} ${margin} L ${region.width - margin} ${margin} L ${region.width - margin} ${margin + cornerTick}" fill="none" stroke="${stroke}" stroke-width="1" opacity="${formatNumber(framingOpacity * 1.5)}" />`,
+      `<path d="M ${margin} ${region.height - margin - cornerTick} L ${margin} ${region.height - margin} L ${margin + cornerTick} ${region.height - margin}" fill="none" stroke="${stroke}" stroke-width="1" opacity="${formatNumber(framingOpacity * 1.5)}" />`,
+      `<path d="M ${region.width - margin - cornerTick} ${region.height - margin} L ${region.width - margin} ${region.height - margin} L ${region.width - margin} ${region.height - margin - cornerTick}" fill="none" stroke="${stroke}" stroke-width="1" opacity="${formatNumber(framingOpacity * 1.5)}" />`,
+    ].join('');
 
-    return `<g data-background-particles="${escapeSvg(decision.background.atmosphere)}">${particles}</g>`;
+    const innerGuide = `<rect x="${margin}" y="${margin}" width="${region.width - margin * 2}" height="${region.height - margin * 2}" fill="none" stroke="${stroke}" stroke-width="0.75" opacity="${formatNumber(framingOpacity * 0.5)}" />`;
+
+    return `<g data-background-particles="${escapeSvg(decision.background.atmosphere)}">${innerGuide}${cornerTicks}</g>`;
   }
 }
 

@@ -1,4 +1,4 @@
-﻿import { motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp,
@@ -6,7 +6,7 @@ import {
   Minus,
 } from 'lucide-react';
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— Types ———————————————————————————————————————————————————————————————————
 
 export interface DashboardStat {
   label:      string;
@@ -17,10 +17,11 @@ export interface DashboardStat {
   iconBg:     string;        // Tailwind bg class
   iconColor:  string;        // Tailwind text class
   href:       string;
+  isLoading?: boolean;
 }
 
 
-// â”€â”€â”€ Container / item animation variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— Container / item animation variants —————————————————————————————————————
 
 const container = {
   hidden: {},
@@ -41,7 +42,7 @@ const cardVariant = {
   },
 };
 
-// â”€â”€â”€ Delta indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— Delta indicator —————————————————————————————————————————————————————————
 
 function DeltaBadge({ delta, label }: { delta: number; label?: string }) {
   const up   = delta > 0;
@@ -64,7 +65,7 @@ function DeltaBadge({ delta, label }: { delta: number; label?: string }) {
   );
 }
 
-// â”€â”€â”€ Stat card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— Stat card ———————————————————————————————————————————————————————————————
 
 function StatCard({ stat }: { stat: DashboardStat }) {
   const Icon = stat.icon;
@@ -88,9 +89,13 @@ function StatCard({ stat }: { stat: DashboardStat }) {
 
         {/* Value */}
         <div className="flex-1 text-right">
-          <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {stat.value}
-          </p>
+          {stat.isLoading ? (
+            <div className="skeleton h-8 w-20 rounded-lg ml-auto" />
+          ) : (
+            <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              {stat.value}
+            </p>
+          )}
         </div>
       </div>
 
@@ -98,11 +103,13 @@ function StatCard({ stat }: { stat: DashboardStat }) {
         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
           {stat.label}
         </p>
-        {stat.delta !== undefined && (
+        {stat.isLoading ? (
+          <div className="skeleton h-3 w-16 rounded mt-1.5 ml-auto sm:ml-0" />
+        ) : stat.delta !== undefined ? (
           <div className="mt-1">
             <DeltaBadge delta={stat.delta} label={stat.deltaLabel} />
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Hover accent line */}
@@ -114,7 +121,7 @@ function StatCard({ stat }: { stat: DashboardStat }) {
   );
 }
 
-// â”€â”€â”€ Skeleton loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— Skeleton loader —————————————————————————————————————————————————————————
 
 function StatSkeleton() {
   return (
@@ -139,7 +146,7 @@ interface DashboardStatsProps {
 }
 
 export default function DashboardStats({ isLoading = false, stats }: DashboardStatsProps) {
-  if (isLoading) {
+  if (isLoading && (stats.length === 0 || stats.every((s) => s.isLoading ?? true))) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (

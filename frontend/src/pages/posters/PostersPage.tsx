@@ -1,6 +1,8 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  AlertCircle,
   Image as ImageIcon,
   Plus,
   Search,
@@ -15,6 +17,7 @@ import PageHeader from '../../components/ui/PageHeader';
 import EmptyState from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/LoadingSpinner';
 import PosterCard, {
+  type Poster,
   type PosterStatus,
   type PosterStyle,
 } from '../../components/posters/PosterCard';
@@ -116,16 +119,16 @@ function FilterSelect<T extends string>({
   );
 }
 
-// â”€â”€â”€ Generate panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -
 //
 // Layout contract:
-//  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â† outer: flex-col, max-h-[82vh]
-//  â”‚  scrollable body (flex-1 overflow-y-auto)       â”‚
-//  â”‚    TemplateSelector                             â”‚
-//  â”‚    AIContentPanel                               â”‚
-//  â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-//  â”‚  sticky footer (flex-none)      â”‚  â† never scrolls away
-//  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+//  -  - outer: flex-col, max-h-[82vh]
+//  -  scrollable body (flex-1 overflow-y-auto)       -
+//  -    TemplateSelector                             -
+//  -    AIContentPanel                               -
+//  -
+//  -  sticky footer (flex-none)      -  - never scrolls away
+//  -
 //
 // The outer wrapper is NOT overflow-hidden so scroll events are contained
 // inside the child scroll area and never bubble up to the page.
@@ -133,15 +136,21 @@ function FilterSelect<T extends string>({
 function GeneratePanel({
   onClose,
   initialProductId,
+  onViewPoster,
+  onCreateAnother,
 }: {
-  onClose:    () => void;
+  onClose:          () => void;
   initialProductId?: string;
+  onViewPoster?:    (posterId: string) => void;
+  onCreateAnother?: () => void;
 }) {
   const [template, setTemplate] = useState<TemplateConfig>({
     style: 'modern', size: 'square', format: 'jpeg',
   });
   const [genAll,   setGenAll]   = useState(false);
   const [phase,    setPhase]    = useState<GenerationPhase>('idle');
+  const [completedPoster, setCompletedPoster] = useState<Poster | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [loadingGeneratedContentId, setLoadingGeneratedContentId] = useState<string | undefined>();
   const [loadingDraftContentType, setLoadingDraftContentType] = useState<ContentType | undefined>();
   const [selectedProductId, setSelectedProductId] = useState(initialProductId ?? '');
@@ -215,6 +224,7 @@ function GeneratePanel({
 
   async function handleGenerate() {
     if (!selectedProductId) return;
+    setErrorMessage(undefined);
     try {
       setPhase('generating-content');
       const usableContent = contentRecords.find((record) =>
@@ -230,7 +240,7 @@ function GeneratePanel({
         contentId = generated._id;
       }
       setPhase('composing-image');
-      await generatePosterMutation.mutateAsync({
+      const newPoster = await generatePosterMutation.mutateAsync({
         productId: selectedProductId,
         style: template.style,
         size: template.size,
@@ -238,14 +248,16 @@ function GeneratePanel({
         contentId,
         title: selectedProduct?.name,
       });
+      setCompletedPoster(newPoster);
       setPhase('uploading');
       setPhase('completed');
-    } catch {
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Generation failed. Please try again.');
       setPhase('failed');
     }
   }
 
-  // â”€â”€ Generation in progress: show progress tracker, no scrollable content â”€â”€
+  // - Generation in progress or completed: show progress tracker & summary -
 
   if (phase !== 'idle') {
     return (
@@ -253,30 +265,31 @@ function GeneratePanel({
         <GenerationProgress
           phase={phase}
           productName={selectedProduct?.name ?? 'Selected product'}
-          onDismiss={phase === 'completed' ? onClose : undefined}
+          errorMessage={errorMessage}
+          generatedPoster={completedPoster ? {
+            id: completedPoster.id,
+            title: completedPoster.productName,
+            productName: completedPoster.productName,
+            posterUrl: completedPoster.posterUrl,
+            style: completedPoster.style,
+            size: completedPoster.size,
+            format: completedPoster.format,
+          } : undefined}
+          onViewPoster={
+            completedPoster && onViewPoster
+              ? () => onViewPoster(completedPoster.id)
+              : undefined
+          }
+          onCreateAnother={onCreateAnother}
+          onDismiss={onClose}
           onRetry={phase === 'failed' ? () => setPhase('idle') : undefined}
         />
       </div>
     );
   }
 
-  // â”€â”€ Idle: scrollable content area + pinned footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
   return (
-    /*
-     * Outer shell: flex-col with a viewport-relative max-height.
-     * Intentionally NOT overflow-hidden â€” that would re-capture scroll events
-     * and route them to the page instead of the inner scroll area.
-     */
     <div className="flex flex-col max-h-[82vh]">
-
-      {/*
-       * Scrollable body.
-       * flex-1 + min-h-0 ensures this div actually shrinks inside the flex parent
-       * (without min-h-0 flex children default to min-height: auto and won't shrink).
-       * overflow-y-auto creates an independent scroll context here.
-       * scrollbar-thin keeps the scrollbar subtle (defined in globals.css).
-       */}
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-4 pt-4 pb-2 space-y-4">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
           <label htmlFor="poster-product" className="label">Product</label>
@@ -334,18 +347,56 @@ function GeneratePanel({
   );
 }
 
-// â”€â”€â”€ PostersPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// - PostersPage -
 
 export default function PostersPage() {
-  const productIdFromUrl = new URLSearchParams(window.location.search).get('productId') ?? undefined;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [initialProductId, setInitialProductId] = useState<string | undefined>(() => {
+    return searchParams.get('productId') ?? undefined;
+  });
+  const [sessionKey,   setSessionKey]   = useState(0);
   const [previewId,    setPreviewId]    = useState<string | null>(null);
   const [editId,       setEditId]       = useState<string | null>(null);
-  const [showGenerate, setShowGenerate] = useState(Boolean(productIdFromUrl));
+  const [showGenerate, setShowGenerate] = useState(Boolean(initialProductId));
   const [search,       setSearch]       = useState('');
   const [statusFilter, setStatusFilter] = useState<PosterStatus | 'all'>('all');
   const [styleFilter,  setStyleFilter]  = useState<PosterStyle  | 'all'>('all');
   const [favOnly,      setFavOnly]      = useState(false);
   const [viewMode,     setViewMode]     = useState<'grid' | 'list'>('grid');
+
+  // Consume productId from URL query params (e.g. arriving from Products page)
+  // Prefill the product, open the creation panel, then clean the URL with history replacement.
+  useEffect(() => {
+    const param = searchParams.get('productId');
+    if (param) {
+      setInitialProductId(param);
+      setShowGenerate(true);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('productId');
+        return next;
+      }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  function handleStartNewPoster() {
+    setInitialProductId(undefined);
+    setShowGenerate(true);
+    setSessionKey((k) => k + 1);
+    if (searchParams.has('productId')) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('productId');
+        return next;
+      }, { replace: true });
+    }
+  }
+
+  function handleViewPoster(posterId: string) {
+    setShowGenerate(false);
+    setPreviewId(posterId);
+    setEditId(null);
+  }
   const postersQuery = usePosters({
     generationStatus: statusFilter === 'all' ? undefined : statusFilter,
     isFavourited: favOnly || undefined,
@@ -357,9 +408,10 @@ export default function PostersPage() {
   const favouritePosterMutation = useTogglePosterFavourite();
   const savePosterEditMutation = useSavePosterEdit();
   const posters = postersQuery.data?.posters ?? [];
-  const showInitialSkeleton = postersQuery.isLoading && !postersQuery.data;
+  const showInitialSkeleton = postersQuery.isPending && !postersQuery.data;
+  const showCountLoading = showInitialSkeleton || postersQuery.isPlaceholderData;
 
-  // â”€â”€ Filtering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // - Filtering -
 
   const filtered = useMemo(() => {
     return posters.filter((p) => {
@@ -382,7 +434,7 @@ export default function PostersPage() {
     setFavOnly(false);
   }
 
-  // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // - Handlers -
 
   const previewPoster = previewId
     ? (() => {
@@ -421,14 +473,14 @@ export default function PostersPage() {
     <>
       <div className="page-container py-7 space-y-6">
 
-        {/* â”€â”€ Page header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* - Page header - */}
         <PageHeader
           title="Posters"
           subtitle="AI-generated product marketing posters for your stores"
           icon={ImageIcon}
           actions={
             <button
-              onClick={() => setShowGenerate((v) => !v)}
+              onClick={handleStartNewPoster}
               className="btn btn-primary btn-md gap-1.5"
             >
               <Plus className="h-4 w-4" />
@@ -437,15 +489,7 @@ export default function PostersPage() {
           }
         />
 
-        {/* â”€â”€ Generate panel (inline slide-down) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-        {/*
-         * The motion.div drives the height animation via `height: 0 â†’ auto`.
-         * We keep `overflow-hidden` ONLY on the motion.div (the animator) so
-         * the slide-open animation clips correctly.  Once the animation is
-         * done the motion.div naturally settles at `height: auto` and the
-         * GeneratePanel's own flex layout takes over â€” its inner scroll area
-         * receives wheel events before they can propagate to the page.
-         */}
+        {/* - Generate panel (inline slide-down) - */}
         <AnimatePresence>
           {showGenerate && (
             <motion.div
@@ -454,13 +498,9 @@ export default function PostersPage() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              // overflow-hidden is required for the height-clip animation to work,
-              // but once the panel is open at `height: auto` it does NOT prevent
-              // the inner div from scrolling independently â€” the child's own
-              // overflow-y-auto scroll container is what the browser targets first.
               className="overflow-hidden rounded-2xl border border-brand-200 dark:border-brand-800/50 bg-white dark:bg-slate-900 shadow-card"
             >
-              {/* Panel header â€” lives outside GeneratePanel to stay visible */}
+              {/* Panel header - lives outside GeneratePanel to stay visible */}
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-brand-500" />
@@ -479,14 +519,17 @@ export default function PostersPage() {
 
               {/* The scrollable generate form */}
               <GeneratePanel
+                key={sessionKey}
                 onClose={() => setShowGenerate(false)}
-                initialProductId={productIdFromUrl}
+                initialProductId={initialProductId}
+                onViewPoster={handleViewPoster}
+                onCreateAnother={handleStartNewPoster}
               />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* â”€â”€ Toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* - Toolbar - */}
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
           <div className="relative flex-1">
@@ -498,7 +541,7 @@ export default function PostersPage() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search posters or storesâ€¦"
+              placeholder="Search posters or stores-"
               className="input pl-9 text-sm"
               aria-label="Search posters"
             />
@@ -558,18 +601,22 @@ export default function PostersPage() {
           </div>
         </div>
 
-        {/* â”€â”€ Result count + clear filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* - Result count + clear filters - */}
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              {filtered.length}
-            </span>
-            {' '}of{' '}
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              {posters.length}
-            </span>
-            {' '}posters
-          </p>
+          {showCountLoading ? (
+            <Skeleton className="h-4 w-32 rounded" />
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                {filtered.length}
+              </span>
+              {' '}of{' '}
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                {posters.length}
+              </span>
+              {' '}posters
+            </p>
+          )}
           {hasFilter && (
             <button
               onClick={clearFilters}
@@ -581,7 +628,7 @@ export default function PostersPage() {
           )}
         </div>
 
-        {/* â”€â”€ Grid / List / Empty â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* - Grid / List / Empty - */}
         <AnimatePresence mode="wait">
           {showInitialSkeleton ? (
             <motion.div
@@ -592,6 +639,35 @@ export default function PostersPage() {
               transition={{ duration: 0.18 }}
             >
               <PosterGridSkeleton viewMode={viewMode} />
+            </motion.div>
+          ) : postersQuery.isError ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="card border-red-200 bg-red-50 p-6 text-center text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/40">
+                    <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">Failed to load posters</h3>
+                    <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1 max-w-sm mx-auto">
+                      {(postersQuery.error as Error)?.message || 'There was an error retrieving your posters. Please try again.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => postersQuery.refetch()}
+                    className="btn btn-secondary btn-sm mt-2"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ) : filtered.length === 0 ? (
             <motion.div
@@ -612,7 +688,7 @@ export default function PostersPage() {
                 actions={
                   hasFilter
                     ? [{ label: 'Clear filters', onClick: clearFilters, variant: 'secondary' }]
-                    : [{ label: 'Generate poster', onClick: () => setShowGenerate(true), variant: 'primary', icon: Plus }]
+                    : [{ label: 'Generate poster', onClick: handleStartNewPoster, variant: 'primary', icon: Plus }]
                 }
               />
             </motion.div>
@@ -645,7 +721,7 @@ export default function PostersPage() {
         </AnimatePresence>
       </div>
 
-      {/* â”€â”€ Lightbox preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* - Lightbox preview - */}
       <PosterPreview
         poster={previewPoster}
         posters={filtered}

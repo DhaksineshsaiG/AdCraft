@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Download,
@@ -16,6 +16,7 @@ import { type ExportFormat } from '../../components/exports/ExportCard';
 import { useBulkExport, useExportAnalytics, useExportHistory, useExportSingle } from '../../hooks/useExports';
 import { usePosters } from '../../hooks/usePosters';
 import { cn } from '../../utils/cn';
+import { Skeleton } from '../../components/ui/LoadingSpinner';
 import { motionStagger, motionFadeUp } from '../../styles/theme';
 
 const DEFAULT_FILTERS: ExportFilterState = {
@@ -62,9 +63,13 @@ function StatCard({
         <Icon className={cn('h-5 w-5', iconCls, animateIcon && 'animate-spin')} strokeWidth={1.8} />
       </div>
       <div>
-        <p className="text-xl font-bold tracking-tight text-slate-900 dark:text-white tabular-nums">
-          {loading ? '-' : value}
-        </p>
+        {loading ? (
+          <Skeleton className="h-7 w-16 rounded-md my-0.5" />
+        ) : (
+          <p className="text-xl font-bold tracking-tight text-slate-900 dark:text-white tabular-nums">
+            {value}
+          </p>
+        )}
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{label}</p>
       </div>
     </motion.div>
@@ -148,7 +153,8 @@ export default function ExportsPage() {
     await bulkExportMutation.mutateAsync({ posterIds, format });
   }
 
-  const isStatsLoading = exportAnalyticsQuery.isLoading || exportHistoryQuery.isLoading;
+  const isHistoryLoading = exportHistoryQuery.isPending && !exportHistoryQuery.data;
+  const isStatsLoading = (exportAnalyticsQuery.isPending && !exportAnalyticsQuery.data) || isHistoryLoading;
 
   return (
     <>
@@ -229,6 +235,7 @@ export default function ExportsPage() {
             onClear={clearFilters}
             totalShown={filtered.length}
             totalRecords={exports.length}
+            isLoading={isHistoryLoading}
           />
         </motion.div>
 
@@ -239,7 +246,7 @@ export default function ExportsPage() {
         >
           <ExportHistory
             records={filtered}
-            isLoading={exportHistoryQuery.isLoading}
+            isLoading={isHistoryLoading}
             onDownload={handleDownload}
             onRetry={handleRetry}
           />

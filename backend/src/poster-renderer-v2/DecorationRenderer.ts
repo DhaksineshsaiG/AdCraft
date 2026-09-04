@@ -18,9 +18,10 @@ export class DecorationRenderer {
     ).join('');
     const maskId = this.createSafeZoneMask(builder, regions, protectedRegions, template);
     const mask = maskId ? ` mask="url(#${maskId})"` : '';
+    const groupOpacity = Math.min(0.24, Math.max(0.06, decision.decorations.opacity * 0.45 * (template?.decorationPreset.intensity ?? 1)));
 
     return [
-      `<g opacity="${formatNumber(decision.decorations.opacity)}" data-decoration="${escapeSvg(decision.decorations.decorationId)}" data-layering="${escapeSvg(decision.decorations.layering)}"${mask}>`,
+      `<g opacity="${formatNumber(groupOpacity)}" data-decoration="${escapeSvg(decision.decorations.decorationId)}" data-layering="${escapeSvg(decision.decorations.layering)}"${mask}>`,
       groups,
       '</g>',
     ].join('');
@@ -32,9 +33,12 @@ export class DecorationRenderer {
 
     const maskBounds = unionRegions([...regions, ...protectedWithArea]);
     const maskId = builder.nextId('renderer2-decoration-mask');
+    const templatePaddingMultiplier = template?.decorationPreset.protectedPadding ? (template.decorationPreset.protectedPadding / 0.04) : 1;
     const blockers = protectedWithArea.map((region) => {
-      const padding = Math.max(8, Math.min(region.width, region.height) * (template?.decorationPreset.protectedPadding ?? 0.04));
-      return `<rect x="${formatNumber(region.x - padding)}" y="${formatNumber(region.y - padding)}" width="${formatNumber(region.width + padding * 2)}" height="${formatNumber(region.height + padding * 2)}" rx="${formatNumber(padding)}" fill="#000000" />`;
+      const isImage = region.role === 'image';
+      const basePadding = Math.round((isImage ? 36 : 24) * templatePaddingMultiplier);
+      const padding = Math.max(basePadding, Math.round(Math.min(region.width, region.height) * (isImage ? 0.08 : 0.05)));
+      return `<rect x="${formatNumber(region.x - padding)}" y="${formatNumber(region.y - padding)}" width="${formatNumber(region.width + padding * 2)}" height="${formatNumber(region.height + padding * 2)}" rx="${formatNumber(Math.min(32, padding))}" fill="#000000" />`;
     }).join('');
 
     builder.addDef(
@@ -54,14 +58,12 @@ export class DecorationRenderer {
     template?: RendererTemplateProfile
   ): string {
     const count = Math.max(1, Math.round(densityCount(decision.decorations.density) * (template?.decorationPreset.intensity ?? 1)));
-    const strokeWidth = Math.max(1, Math.min(region.width, region.height) * 0.006 * (template?.decorationPreset.scale ?? 1));
+    const strokeWidth = Math.max(1, Math.min(2.5, Math.min(region.width, region.height) * 0.004 * (template?.decorationPreset.scale ?? 1)));
     const layerOffset = layerOffsetFor(decision.decorations.layering);
-    const backgroundLayer = this.renderLayer(decision, region, count, strokeWidth, regionIndex, -1, layerOffset * 0.45);
+    const backgroundLayer = this.renderLayer(decision, region, count, strokeWidth, regionIndex, -1, layerOffset * 0.3);
     const midLayer = this.renderLayer(decision, region, count, strokeWidth, regionIndex, 0, 0);
-    const frontLayer = decision.decorations.layering === 'stacked' ||
-      decision.decorations.layering === 'interwoven' ||
-      decision.decorations.layering === 'cinematic'
-      ? this.renderLayer(decision, region, Math.max(2, Math.ceil(count / 2)), strokeWidth * 0.75, regionIndex, 1, -layerOffset * 0.7)
+    const frontLayer = decision.decorations.layering === 'cinematic'
+      ? this.renderLayer(decision, region, 1, strokeWidth * 0.8, regionIndex, 1, -layerOffset * 0.5)
       : '';
 
     return [
@@ -83,26 +85,28 @@ export class DecorationRenderer {
     offset: number
   ): string {
     const color = layer < 0 ? decision.colors.decorative : layer > 0 ? decision.colors.headline : decision.colors.accent;
-    const opacity = layer < 0 ? 0.32 : layer > 0 ? 0.42 : 0.68;
+    const opacity = layer < 0 ? 0.16 : layer > 0 ? 0.22 : 0.28;
 
     if (decision.decorations.placement === 'frame') {
-      const inset = Math.max(0, (layer + 1) * strokeWidth * 4);
-      return `<rect x="${formatNumber(region.x + inset)}" y="${formatNumber(region.y + inset)}" width="${formatNumber(region.width - inset * 2)}" height="${formatNumber(region.height - inset * 2)}" fill="none" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth)}" rx="${formatNumber(strokeWidth * 8)}" opacity="${formatNumber(opacity)}" />`;
+      const inset = Math.max(0, (layer + 1) * strokeWidth * 2);
+      return `<rect x="${formatNumber(region.x + inset)}" y="${formatNumber(region.y + inset)}" width="${formatNumber(region.width - inset * 2)}" height="${formatNumber(region.height - inset * 2)}" fill="none" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth)}" rx="${formatNumber(strokeWidth * 3)}" opacity="${formatNumber(opacity * 0.5)}" />`;
     }
 
     if (decision.decorations.placement === 'diagonal') {
-      return Array.from({ length: count }, (_, index) => {
-        const progress = (index + 1) / (count + 1);
-        return `<path d="M ${formatNumber(region.x - offset)} ${formatNumber(region.y + region.height * progress + offset)} L ${formatNumber(region.x + region.width + offset)} ${formatNumber(region.y + region.height * Math.max(0, progress - 0.24) - offset)}" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth * (2.4 + layer * 0.5))}" stroke-linecap="round" fill="none" opacity="${formatNumber(opacity)}" />`;
+      const lineLength = Math.min(48, Math.min(region.width, region.height) * 0.22);
+      return Array.from({ length: Math.min(2, count) }, (_, index) => {
+        const xOffset = index * strokeWidth * 5;
+        const x1 = region.x + region.width * 0.1 + xOffset;
+        const y1 = region.y + region.height * 0.85;
+        const x2 = x1 + lineLength;
+        const y2 = y1 - lineLength * 0.5;
+        return `<line x1="${formatNumber(x1)}" y1="${formatNumber(y1)}" x2="${formatNumber(x2)}" y2="${formatNumber(y2)}" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth)}" stroke-linecap="round" opacity="${formatNumber(opacity * 0.5)}" />`;
       }).join('');
     }
 
     if (decision.decorations.placement === 'text-adjacent') {
-      return Array.from({ length: Math.max(2, Math.ceil(count / 2)) }, (_, index) => {
-        const y = region.y + region.height - strokeWidth * (index + 2) + offset;
-        const width = region.width * (0.2 + (index + 1) / (count + 2) * 0.62);
-        return `<line x1="${formatNumber(region.x)}" y1="${formatNumber(y)}" x2="${formatNumber(region.x + width)}" y2="${formatNumber(y)}" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth)}" opacity="${formatNumber(opacity)}" />`;
-      }).join('');
+      const ruleWidth = Math.min(50, region.width * 0.35);
+      return `<line x1="${formatNumber(region.x)}" y1="${formatNumber(region.y + region.height * 0.5)}" x2="${formatNumber(region.x + ruleWidth)}" y2="${formatNumber(region.y + region.height * 0.5)}" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(Math.min(2, strokeWidth * 1.2))}" stroke-linecap="round" opacity="${formatNumber(opacity * 0.7)}" />`;
     }
 
     if (decision.decorations.placement === 'around-product') {
@@ -119,7 +123,7 @@ export class DecorationRenderer {
   private renderOrbit(
     decision: PosterDesignDecision,
     region: Region,
-    count: number,
+    _count: number,
     color: string,
     strokeWidth: number,
     opacity: number,
@@ -127,37 +131,34 @@ export class DecorationRenderer {
   ): string {
     const centerX = region.x + region.width / 2;
     const centerY = region.y + region.height / 2;
-    const orbit = `<ellipse cx="${formatNumber(centerX)}" cy="${formatNumber(centerY + offset)}" rx="${formatNumber(region.width * 0.49)}" ry="${formatNumber(region.height * 0.38)}" fill="none" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth)}" opacity="${formatNumber(opacity * 0.55)}" />`;
-    const particles = Array.from({ length: count }, (_, index) => {
-      const angle = (Math.PI * 2 * index) / count + (offset * 0.01);
-      const x = centerX + Math.cos(angle) * region.width * 0.47;
-      const y = centerY + Math.sin(angle) * region.height * 0.36;
-      return `<circle cx="${formatNumber(x)}" cy="${formatNumber(y)}" r="${formatNumber(strokeWidth * (2.4 + index % 2))}" fill="${escapeSvg(index % 2 === 0 ? color : decision.colors.decorative)}" opacity="${formatNumber(opacity)}" />`;
-    }).join('');
+    const rx = region.width * 0.46;
+    const ry = region.height * 0.38;
 
-    return orbit + particles;
+    const outerRing = `<ellipse cx="${formatNumber(centerX)}" cy="${formatNumber(centerY + offset)}" rx="${formatNumber(rx)}" ry="${formatNumber(ry)}" fill="none" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth * 0.8)}" opacity="${formatNumber(opacity * 0.35)}" />`;
+    const innerRing = `<ellipse cx="${formatNumber(centerX)}" cy="${formatNumber(centerY + offset)}" rx="${formatNumber(rx * 0.94)}" ry="${formatNumber(ry * 0.94)}" fill="none" stroke="${escapeSvg(decision.colors.decorative)}" stroke-width="${formatNumber(strokeWidth * 0.5)}" stroke-dasharray="4 8" opacity="${formatNumber(opacity * 0.25)}" />`;
+
+    return outerRing + innerRing;
   }
 
   private renderEdgeSystem(
-    decision: PosterDesignDecision,
+    _decision: PosterDesignDecision,
     region: Region,
-    count: number,
+    _count: number,
     color: string,
     strokeWidth: number,
     opacity: number,
-    offset: number
+    _offset: number
   ): string {
-    const rails = [
-      `<path d="M ${formatNumber(region.x + offset)} ${formatNumber(region.y + region.height * 0.18)} C ${formatNumber(region.x + region.width * 0.28)} ${formatNumber(region.y + region.height * 0.08)}, ${formatNumber(region.x + region.width * 0.72)} ${formatNumber(region.y + region.height * 0.08)}, ${formatNumber(region.x + region.width - offset)} ${formatNumber(region.y + region.height * 0.18)}" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth)}" fill="none" opacity="${formatNumber(opacity)}" />`,
-      `<path d="M ${formatNumber(region.x + offset)} ${formatNumber(region.y + region.height * 0.82)} C ${formatNumber(region.x + region.width * 0.28)} ${formatNumber(region.y + region.height * 0.92)}, ${formatNumber(region.x + region.width * 0.72)} ${formatNumber(region.y + region.height * 0.92)}, ${formatNumber(region.x + region.width - offset)} ${formatNumber(region.y + region.height * 0.82)}" stroke="${escapeSvg(decision.colors.decorative)}" stroke-width="${formatNumber(strokeWidth)}" fill="none" opacity="${formatNumber(opacity * 0.65)}" />`,
-    ];
-    const nodes = Array.from({ length: count }, (_, index) => {
-      const x = region.x + region.width * ((index + 1) / (count + 1));
-      const y = index % 2 === 0 ? region.y + region.height * 0.18 : region.y + region.height * 0.82;
-      return `<rect x="${formatNumber(x - strokeWidth * 2)}" y="${formatNumber(y - strokeWidth * 2)}" width="${formatNumber(strokeWidth * 4)}" height="${formatNumber(strokeWidth * 4)}" rx="${formatNumber(strokeWidth)}" fill="${escapeSvg(color)}" opacity="${formatNumber(opacity)}" />`;
-    });
+    const crossSize = Math.max(8, Math.min(16, strokeWidth * 6));
+    const renderCross = (cx: number, cy: number) =>
+      `<path d="M ${formatNumber(cx - crossSize / 2)} ${formatNumber(cy)} L ${formatNumber(cx + crossSize / 2)} ${formatNumber(cy)} M ${formatNumber(cx)} ${formatNumber(cy - crossSize / 2)} L ${formatNumber(cx)} ${formatNumber(cy + crossSize / 2)}" stroke="${escapeSvg(color)}" stroke-width="${formatNumber(strokeWidth * 0.8)}" opacity="${formatNumber(opacity * 0.5)}" />`;
 
-    return [...rails, ...nodes].join('');
+    return [
+      renderCross(region.x + crossSize, region.y + crossSize),
+      renderCross(region.x + region.width - crossSize, region.y + crossSize),
+      renderCross(region.x + crossSize, region.y + region.height - crossSize),
+      renderCross(region.x + region.width - crossSize, region.y + region.height - crossSize),
+    ].join('');
   }
 
   private renderParticleField(
@@ -166,24 +167,22 @@ export class DecorationRenderer {
     color: string,
     strokeWidth: number,
     opacity: number,
-    regionIndex: number,
+    _regionIndex: number,
     offset: number
   ): string {
-    return Array.from({ length: count }, (_, index) => {
-      const progress = (index + 1) / (count + 1);
-      const x = region.x + region.width * progress + offset;
-      const y = region.y + region.height * (((regionIndex + index + 1) % 5) / 5) - offset;
-      const radius = strokeWidth * (2.4 + index % 3);
-
-      return `<circle cx="${formatNumber(x)}" cy="${formatNumber(y)}" r="${formatNumber(radius)}" fill="${escapeSvg(color)}" opacity="${formatNumber(opacity)}" />`;
+    const dotCount = Math.min(3, Math.max(1, count));
+    return Array.from({ length: dotCount }, (_, index) => {
+      const cx = region.x + (region.width / (dotCount + 1)) * (index + 1);
+      const cy = region.y + region.height * 0.5 + offset;
+      return `<circle cx="${formatNumber(cx)}" cy="${formatNumber(cy)}" r="${formatNumber(strokeWidth * 1.2)}" fill="${escapeSvg(color)}" opacity="${formatNumber(opacity * 0.4)}" />`;
     }).join('');
   }
 }
 
 function densityCount(density: string): number {
-  if (density === 'high') return 9;
-  if (density === 'medium') return 6;
-  if (density === 'low') return 3;
+  if (density === 'high') return 4;
+  if (density === 'medium') return 3;
+  if (density === 'low') return 2;
   return 0;
 }
 

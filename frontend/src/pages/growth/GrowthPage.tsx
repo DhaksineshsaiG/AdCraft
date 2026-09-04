@@ -4,10 +4,11 @@ import toast from 'react-hot-toast';
 import { Sparkles, Store as StoreIcon, Package } from 'lucide-react';
 import { useStores } from '../../hooks/useStores';
 import { useProducts } from '../../hooks/useProducts';
+import { useStoreCampaigns, campaignKeys } from '../../hooks/useCampaigns';
+import { useQueryClient } from '@tanstack/react-query';
 import { analyzeStore, GrowthAnalysisResult } from '../../services/growth.service';
 import {
   createCampaign,
-  listStoreCampaigns,
   getCampaign,
   BackendCampaign,
   CreateCampaignPayload,
@@ -17,7 +18,7 @@ import TopOpportunityCard from '../../components/growth/TopOpportunityCard';
 import CampaignWorkspaceView from '../../components/growth/CampaignWorkspaceView';
 import CampaignsListCard from '../../components/growth/CampaignsListCard';
 import EmptyState from '../../components/ui/EmptyState';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import PageDataLoader from '../../components/ui/PageDataLoader';
 
 export const GrowthPage: React.FC = () => {
   const { campaignId: paramCampaignId } = useParams<{ campaignId?: string }>();
@@ -25,6 +26,7 @@ export const GrowthPage: React.FC = () => {
   const campaignId = paramCampaignId || searchParams.get('campaignId');
   const navigate = useNavigate();
   const workspaceRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const { data: stores = [], isLoading: isLoadingStores } = useStores();
 
@@ -32,7 +34,6 @@ export const GrowthPage: React.FC = () => {
   const [analysis, setAnalysis] = useState<GrowthAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const [campaigns, setCampaigns] = useState<BackendCampaign[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<BackendCampaign | null>(null);
   const [isLaunchingCampaign, setIsLaunchingCampaign] = useState(false);
 
@@ -43,30 +44,19 @@ export const GrowthPage: React.FC = () => {
     }
   }, [stores, selectedStoreId]);
 
+  // Fetch campaigns using React Query with automatic store-keying & cache
+  const campaignsQuery = useStoreCampaigns(selectedStoreId);
+  const campaigns = campaignsQuery.data ?? [];
+  const isCampaignsLoading = campaignsQuery.isPending && !campaignsQuery.data;
+
   // Fetch products count for selected store
-  const { data: productData, isLoading: isLoadingProducts } = useProducts({
+  const { data: productData, isLoading: isLoadingProducts, isPending: isPendingProducts } = useProducts({
     storeId: selectedStoreId || undefined,
     limit: 1,
   });
 
+  const isProductsLoading = isLoadingProducts || (isPendingProducts && !productData);
   const totalProducts = productData?.pagination.total ?? 0;
-
-  // Load campaigns for selected store
-  const loadStoreCampaigns = async (storeId: string) => {
-    if (!storeId) return;
-    try {
-      const data = await listStoreCampaigns(storeId);
-      setCampaigns(data);
-    } catch (err) {
-      console.error('[GrowthPage] Failed to fetch campaigns:', err);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedStoreId) {
-      loadStoreCampaigns(selectedStoreId);
-    }
-  }, [selectedStoreId]);
 
   // Synchronize campaign selection with route param or query param
   useEffect(() => {
@@ -180,12 +170,12 @@ export const GrowthPage: React.FC = () => {
       }, 50);
 
       // Refresh campaigns list
-      await loadStoreCampaigns(selectedStoreId);
+      await queryClient.invalidateQueries({ queryKey: campaignKeys.store(selectedStoreId) });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create campaign.';
       toast.error(message, { id: 'launching-campaign' });
       // In case the backend finished right around the error, refresh campaign list
-      await loadStoreCampaigns(selectedStoreId);
+      await queryClient.invalidateQueries({ queryKey: campaignKeys.store(selectedStoreId) });
     } finally {
       setIsLaunchingCampaign(false);
     }
@@ -221,10 +211,10 @@ export const GrowthPage: React.FC = () => {
   if (isLoadingStores) {
     return (
       <div className="flex flex-1 items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingSpinner size="lg" />
-          <p className="text-sm text-slate-500 animate-pulse">Loading Growth Command Center...</p>
-        </div>
+        <PageDataLoader
+          message="Loading Growth Command Center…"
+          description="Connecting to AI Growth Agent and product stores"
+        />
       </div>
     );
   }
@@ -270,7 +260,7 @@ export const GrowthPage: React.FC = () => {
       />
 
       {/* Empty State: Store has 0 products */}
-      {!isLoadingProducts && totalProducts === 0 && (
+      {!isProductsLoading && productData !== undefined && totalProducts === 0 && (
         <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-6 text-center mb-8">
           <Package className="w-10 h-10 text-amber-500 mx-auto mb-3" />
           <h3 className="text-base font-bold text-amber-900 dark:text-amber-200">
@@ -297,7 +287,7 @@ export const GrowthPage: React.FC = () => {
             campaign={activeCampaign}
             onCampaignUpdated={(updated) => {
               setActiveCampaign(updated);
-              loadStoreCampaigns(selectedStoreId);
+              queryClient.invalidateQueries({ queryKey: campaignKeys.store(selectedStoreId) });
             }}
           />
         </div>
@@ -317,7 +307,7 @@ export const GrowthPage: React.FC = () => {
       )}
 
       {/* Prompt to analyze if no analysis and no active campaign */}
-      {!analysis && !activeCampaign && totalProducts > 0 && (
+      {!analysis && !activeCampaign && !isCampaignsLoading && !isProductsLoading && campaigns.length === 0 && totalProducts > 0 && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-12 text-center shadow-sm mb-8">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-950/40 text-brand-500 mx-auto mb-4 border border-brand-500/20">
             <Sparkles className="w-7 h-7" />
@@ -337,6 +327,7 @@ export const GrowthPage: React.FC = () => {
         activeCampaignId={activeCampaign?.id}
         onSelectCampaign={handleSelectCampaign}
         onNewAnalysis={handleNewAnalysis}
+        isLoading={isCampaignsLoading}
       />
     </div>
   );

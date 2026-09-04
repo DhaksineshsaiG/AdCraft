@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   connectStore,
@@ -18,8 +18,8 @@ export function useStores() {
   return useQuery({
     queryKey: storeKeys.all,
     queryFn: listStores,
-    placeholderData: (previousData) => previousData,
-    staleTime: 15_000,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 

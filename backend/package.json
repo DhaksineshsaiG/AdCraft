@@ -17,7 +17,7 @@
     "renderer2:test": "ts-node src/poster-renderer-v2/testRenderer.ts",
     "renderer2:production": "ts-node src/poster-renderer-v2/testProductionRenderer.ts",
     "renderer2:templates": "ts-node src/poster-renderer-v2/testTemplates.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",

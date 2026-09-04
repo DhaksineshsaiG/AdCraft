@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   deletePoster,
@@ -18,21 +18,23 @@ import {
 import { publishNotification } from '@services/notifications.service';
 import type { Poster, PosterFormat, PosterStyle } from '@components/posters/PosterCard';
 import { triggerBrowserDownload } from '../utils/download';
+import { normalizeQueryParams } from '../utils/query';
 
 export const posterKeys = {
   all: ['posters'] as const,
   lists: () => [...posterKeys.all, 'list'] as const,
-  list: (params: PosterListParams = {}) => [...posterKeys.all, 'list', params] as const,
+  list: (params: PosterListParams = {}) => [...posterKeys.all, 'list', normalizeQueryParams(params as Record<string, unknown>)] as const,
   templates: (style?: PosterStyle) => [...posterKeys.all, 'templates', style ?? 'all'] as const,
   preview: (posterId?: string) => [...posterKeys.all, 'preview', posterId ?? 'none'] as const,
 };
 
 export function usePosters(params: PosterListParams = {}) {
+  const normalizedParams = normalizeQueryParams(params as Record<string, unknown>) as PosterListParams;
   return useQuery({
     queryKey: posterKeys.list(params),
-    queryFn: () => listPosters(params),
-    placeholderData: (previousData) => previousData,
-    staleTime: 15_000,
+    queryFn: () => listPosters(normalizedParams),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 

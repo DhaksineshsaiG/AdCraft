@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   deleteContent,
@@ -17,6 +17,7 @@ import {
 } from '@services/mappers';
 import type { ContentBlock } from '@components/posters/AIContentPanel';
 import type { ContentType } from '@components/posters/AIContentPanel';
+import { normalizeQueryParams } from '../utils/query';
 
 interface ProductContentResult {
   records: BackendContent[];
@@ -28,7 +29,7 @@ export const contentKeys = {
   history: (
     productId?: string,
     params: { page?: number; limit?: number } = {}
-  ) => [...contentKeys.all, 'history', productId ?? 'all', params] as const,
+  ) => [...contentKeys.all, 'history', productId ?? 'all', normalizeQueryParams(params)] as const,
   product: (productId?: string) => [...contentKeys.all, 'product', productId ?? 'none'] as const,
   usage: () => [...contentKeys.all, 'usage'] as const,
 };
@@ -37,11 +38,12 @@ export function useContentHistory(
   productId?: string,
   params: { page?: number; limit?: number } = { limit: 20 }
 ) {
+  const normalized = normalizeQueryParams(params);
   return useQuery({
     queryKey: contentKeys.history(productId, params),
-    queryFn: () => getContentHistory({ productId, ...params }),
-    placeholderData: (previousData) => previousData,
-    staleTime: 15_000,
+    queryFn: () => getContentHistory({ productId, ...normalized }),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -50,8 +52,8 @@ export function useGeneratedContent(productId?: string) {
     queryKey: contentKeys.product(productId),
     queryFn: () => getContentByProduct(productId!),
     enabled: Boolean(productId),
-    placeholderData: (previousData) => previousData,
-    staleTime: 15_000,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -59,8 +61,7 @@ export function useContentUsageStats() {
   return useQuery({
     queryKey: contentKeys.usage(),
     queryFn: getUsageStats,
-    placeholderData: (previousData) => previousData,
-    staleTime: 15_000,
+    placeholderData: keepPreviousData,
   });
 }
 

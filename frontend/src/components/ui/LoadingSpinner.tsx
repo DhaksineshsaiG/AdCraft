@@ -80,14 +80,23 @@ export function LoadingSpinner({
   );
 }
 
-export function AppLoadingIcon({ label = 'Loading…' }: { label?: string }) {
+export function AppLoadingIcon({ label = 'Loading…', className }: { label?: string; className?: string }) {
   return (
-    <div role="status" aria-label={label} className="relative grid h-20 w-20 place-items-center">
-      <div className="absolute inset-0 animate-spin rounded-[1.75rem]">
-        <span className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-brand-300 shadow-[0_0_16px_rgba(165,180,252,0.8)]" />
-      </div>
-      <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 shadow-lg">
-        <div className="h-4 w-4 rounded-md bg-white/85" />
+    <div role="status" aria-label={label} className={cn('relative grid h-20 w-20 place-items-center', className)}>
+      {/* Subtle outer ambient pulse */}
+      <div
+        className="absolute inset-0 rounded-full bg-brand-500/10 dark:bg-brand-400/15 animate-ping pointer-events-none"
+        style={{ animationDuration: '2.4s' }}
+      />
+      {/* Orbiting spinner ring */}
+      <div className="absolute inset-0 animate-spin rounded-full border border-brand-500/20 border-t-brand-500 dark:border-brand-400/20 dark:border-t-brand-400" />
+      {/* Official AdCraft brandmark with dark mode ambient glow */}
+      <div className="brand-logo-wrapper brand-logo-glow-loader relative z-10 flex h-12 w-12 items-center justify-center">
+        <img
+          src="/brand/adcraft-icon.png"
+          alt="AdCraft"
+          className="brand-logo h-10 w-10 object-contain animate-pulse-soft"
+        />
       </div>
       <span className="sr-only">{label}</span>
     </div>

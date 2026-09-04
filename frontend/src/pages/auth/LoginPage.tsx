@@ -136,13 +136,22 @@ export default function LoginPage() {
         >
           {/* Logo */}
           <motion.div variants={item} className="mb-8">
-            <Link to="/" className="inline-flex items-center gap-2.5 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 shadow-md group-hover:bg-brand-600 transition-colors">
-                <Sparkles className="h-4.5 w-4.5 text-white" strokeWidth={1.8} />
+            <Link to="/" className="inline-flex items-center gap-3 group">
+              <div className="brand-logo-wrapper brand-logo-glow-subtle shrink-0">
+                <img
+                  src="/brand/adcraft-icon.png"
+                  alt="AdCraft"
+                  className="brand-logo h-9 w-9 object-contain group-hover:scale-105 transition-transform"
+                />
               </div>
-              <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-                PosterAI
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+                  AdCraft
+                </span>
+                <span className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-500 leading-tight">
+                  Ideas Into Impact
+                </span>
+              </div>
             </Link>
           </motion.div>
 

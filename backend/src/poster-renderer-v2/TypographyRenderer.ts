@@ -1,7 +1,7 @@
 import type { PosterDesignDecision } from '../poster-intelligence/composer/PosterDesignTypes';
 import type { Region } from './Canvas';
 import { escapeSvg, formatNumber } from './SVGBuilder';
-import type { RendererTemplateProfile } from './templates/TemplateTypes';
+import type { RendererTemplateProfile, TemplateTypographyPersonality } from './templates/TemplateTypes';
 
 export interface TypographyContent {
   headline: string;
@@ -11,49 +11,86 @@ export interface TypographyContent {
 
 export class TypographyRenderer {
   renderHeadline(decision: PosterDesignDecision, region: Region, text: string, template?: RendererTemplateProfile): string {
+    const personality = template?.typographyPersonality ?? resolvePersonality(decision, template);
+    let fontFamily = decision.typography.headlineFont;
+    let lineHeight = decision.typography.lineHeight * (template?.typographyRatios.lineHeightMultiplier ?? 1);
+    let transform = decision.typography.headlineTransform;
+    let letterSpacing = decision.typography.headlineLetterSpacing * (template?.typographyRatios.trackingMultiplier ?? 1);
+    let weight: number = decision.typography.headlineWeight;
+    let baseSize = decision.typography.headlineSize * (template?.typographyRatios.headlineScale ?? 1);
+
+    if (personality === 'editorial-serif') {
+      fontFamily = isSerif(fontFamily) ? fontFamily : 'Playfair Display, "Cinzel", "Didot", serif';
+      lineHeight = Math.max(1.14, lineHeight * 1.12);
+      letterSpacing = Math.max(0.5, letterSpacing * 1.3);
+      weight = Math.min(700, Math.max(500, weight));
+      transform = 'none';
+      baseSize = Math.max(38, Math.min(64, baseSize * 1.05));
+    } else if (personality === 'bold-display') {
+      fontFamily = isDisplay(fontFamily) ? fontFamily : 'Oswald, "Bebas Neue", "Impact", sans-serif';
+      lineHeight = Math.min(1.02, Math.max(0.92, lineHeight * 0.94));
+      letterSpacing = Math.max(0.3, letterSpacing * 0.9);
+      weight = Math.max(700, weight);
+      transform = 'uppercase';
+      baseSize = Math.max(44, Math.min(76, baseSize * 1.15));
+    } else {
+      fontFamily = isModernSans(fontFamily) ? fontFamily : 'Inter, "Plus Jakarta Sans", sans-serif';
+      lineHeight = Math.max(1.10, Math.min(1.16, lineHeight));
+      weight = Math.min(700, Math.max(600, weight));
+      baseSize = Math.max(36, Math.min(62, baseSize));
+    }
+
     return this.renderTextBlock({
       text,
       region,
-      fontFamily: decision.typography.headlineFont,
-      fontSize: decision.typography.headlineSize * (template?.typographyRatios.headlineScale ?? 1),
+      fontFamily,
+      fontSize: baseSize,
       fill: decision.colors.headline,
-      weight: decision.typography.headlineWeight,
-      lineHeight: decision.typography.lineHeight * (template?.typographyRatios.lineHeightMultiplier ?? 1),
+      weight,
+      lineHeight,
       alignment: region.alignment ?? decision.typography.alignment,
       maxCharactersPerLine: Math.round(decision.typography.maxCharactersPerLine * (template?.typographyRatios.maxLineLengthMultiplier ?? 1)),
-      transform: decision.typography.headlineTransform,
-      letterSpacing: decision.typography.headlineLetterSpacing * (template?.typographyRatios.trackingMultiplier ?? 1),
+      transform,
+      letterSpacing,
       hierarchy: 'headline',
     });
   }
 
   renderDescription(decision: PosterDesignDecision, region: Region, text: string, template?: RendererTemplateProfile): string {
+    const personality = template?.typographyPersonality ?? resolvePersonality(decision, template);
+    let fontFamily = decision.typography.descriptionFont;
+    if (personality === 'editorial-serif' && !isSerif(fontFamily)) {
+      fontFamily = 'Cormorant Garamond, "EB Garamond", serif';
+    }
+
     return this.renderTextBlock({
       text,
       region,
-      fontFamily: decision.typography.descriptionFont,
-      fontSize: decision.typography.descriptionSize * (template?.typographyRatios.descriptionScale ?? 1),
+      fontFamily,
+      fontSize: Math.max(14, Math.min(18, Math.round(decision.typography.descriptionSize * (template?.typographyRatios.descriptionScale ?? 1)))),
       fill: decision.colors.description,
-      weight: 400,
+      weight: personality === 'editorial-serif' ? 500 : 400,
       lineHeight: Math.max(1.18, decision.typography.lineHeight * (template?.typographyRatios.lineHeightMultiplier ?? 1)),
       alignment: region.alignment ?? decision.typography.alignment,
       maxCharactersPerLine: Math.max(28, Math.round((decision.typography.maxCharactersPerLine + 12) * (template?.typographyRatios.maxLineLengthMultiplier ?? 1))),
       transform: 'none',
-      letterSpacing: 0,
+      letterSpacing: personality === 'editorial-serif' ? 0.3 : 0,
       hierarchy: 'description',
     });
   }
 
   renderPrice(decision: PosterDesignDecision, region: Region, text: string | undefined, template?: RendererTemplateProfile): string {
     if (!text) return '';
+    const personality = template?.typographyPersonality ?? resolvePersonality(decision, template);
+    const fontFamily = personality === 'bold-display' ? (decision.typography.headlineFont || 'Oswald, sans-serif') : decision.typography.ctaFont;
 
     return this.renderTextBlock({
       text,
       region,
-      fontFamily: decision.typography.ctaFont,
-      fontSize: Math.max(18, decision.typography.descriptionSize * 1.15 * (template?.typographyRatios.priceScale ?? 1)),
+      fontFamily,
+      fontSize: Math.max(20, Math.min(32, Math.round(decision.typography.descriptionSize * 1.35 * (template?.typographyRatios.priceScale ?? 1)))),
       fill: decision.colors.accent,
-      weight: decision.typography.ctaWeight,
+      weight: Math.max(600, decision.typography.ctaWeight),
       lineHeight: 1.1 * (template?.typographyRatios.lineHeightMultiplier ?? 1),
       alignment: region.alignment ?? decision.typography.alignment,
       maxCharactersPerLine: 18,
@@ -144,10 +181,10 @@ function capitalize(text: string): string {
 }
 
 function responsiveFontSize(baseFontSize: number, region: Region, hierarchy: 'headline' | 'description' | 'price'): number {
-  const widthLimit = region.width / (hierarchy === 'headline' ? 6.2 : hierarchy === 'price' ? 5 : 12);
-  const heightLimit = region.height / (hierarchy === 'headline' ? 1.35 : hierarchy === 'price' ? 1.2 : 2.2);
+  const widthLimit = region.width / (hierarchy === 'headline' ? 5.8 : hierarchy === 'price' ? 4.0 : 12);
+  const heightLimit = region.height / (hierarchy === 'headline' ? 1.3 : hierarchy === 'price' ? 1.15 : 2.0);
   const maxSize = Math.min(widthLimit, heightLimit);
-  const minSize = hierarchy === 'headline' ? 28 : hierarchy === 'price' ? 16 : 13;
+  const minSize = hierarchy === 'headline' ? 26 : hierarchy === 'price' ? 18 : 13;
 
   return Math.max(minSize, Math.min(baseFontSize, maxSize));
 }
@@ -164,7 +201,7 @@ function fitFontSize(
   }
 ): number {
   let fontSize = responsiveFontSize(input.fontSize, input.region, input.hierarchy);
-  const minSize = input.hierarchy === 'headline' ? 20 : input.hierarchy === 'price' ? 15 : 12;
+  const minSize = input.hierarchy === 'headline' ? 20 : input.hierarchy === 'price' ? 16 : 12;
 
   while (fontSize > minSize) {
     const maxLineWidth = Math.max(8, Math.floor(input.region.width / estimatedCharacterWidth(fontSize, input.letterSpacing)));
@@ -185,15 +222,16 @@ function estimatedCharacterWidth(fontSize: number, letterSpacing: number): numbe
 }
 
 function verticalStart(region: Region, textHeight: number, fontSize: number, hierarchy: 'headline' | 'description' | 'price'): number {
-  if (region.verticalAlignment === 'bottom' || hierarchy === 'price') {
-    return region.y + Math.max(fontSize, region.height - textHeight + fontSize * 0.9);
+  if (hierarchy === 'price' || region.verticalAlignment === 'middle') {
+    const baselineOffset = Math.round((region.height - textHeight) / 2 + fontSize * 0.82);
+    return region.y + Math.max(fontSize, baselineOffset);
   }
 
-  if (region.verticalAlignment === 'middle') {
-    return region.y + Math.max(fontSize, (region.height - textHeight) / 2 + fontSize);
+  if (region.verticalAlignment === 'bottom') {
+    return region.y + Math.max(fontSize, region.height - textHeight + fontSize * 0.85);
   }
 
-  return region.y + fontSize;
+  return region.y + Math.round(fontSize * 0.95);
 }
 
 function ellipsizeLines(lines: string[], maxLines: number, maxCharactersPerLine: number): string[] {
@@ -209,6 +247,37 @@ function ellipsizeLines(lines: string[], maxLines: number, maxCharactersPerLine:
 function ellipsize(text: string, maxCharacters: number): string {
   if (text.length <= maxCharacters) return text;
   return `${text.slice(0, Math.max(1, maxCharacters - 3)).trimEnd()}...`;
+}
+
+function resolvePersonality(decision: PosterDesignDecision, template?: RendererTemplateProfile): TemplateTypographyPersonality {
+  if (template?.typographyPersonality) {
+    return template.typographyPersonality;
+  }
+  const headlineFont = (decision.typography.headlineFont || '').toLowerCase();
+  const typoId = decision.typography?.typographyId;
+  const tone = (decision.metadata?.selectedTone || '').toLowerCase();
+  if (isSerif(headlineFont) || typoId === 'editorial' || typoId === 'luxury' || typoId === 'fashion' || tone.includes('editorial') || tone.includes('luxury')) {
+    return 'editorial-serif';
+  }
+  if (isDisplay(headlineFont) || typoId === 'bold' || typoId === 'sport' || tone.includes('bold') || tone.includes('punchy')) {
+    return 'bold-display';
+  }
+  return 'modern-sans';
+}
+
+function isSerif(font: string): boolean {
+  const f = font.toLowerCase();
+  return f.includes('serif') || f.includes('playfair') || f.includes('cormorant') || f.includes('didot') || f.includes('cinzel') || f.includes('garamond') || f.includes('merriweather');
+}
+
+function isDisplay(font: string): boolean {
+  const f = font.toLowerCase();
+  return f.includes('oswald') || f.includes('bebas') || f.includes('impact') || f.includes('anton') || f.includes('montserrat') || f.includes('display');
+}
+
+function isModernSans(font: string): boolean {
+  const f = font.toLowerCase();
+  return f.includes('inter') || f.includes('plus jakarta') || f.includes('helvetica') || f.includes('sans-serif') || f.includes('roboto') || f.includes('poppins');
 }
 
 export default TypographyRenderer;

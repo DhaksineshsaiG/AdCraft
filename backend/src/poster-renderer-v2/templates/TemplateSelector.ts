@@ -22,6 +22,7 @@ const CATEGORY_COLLECTION_HINTS: Record<string, TemplateCollection> = {
   electronics: 'Electronics',
   phone: 'Electronics',
   audio: 'Electronics',
+  headphones: 'Electronics',
   technology: 'Technology',
   software: 'Technology',
   gaming: 'Technology',

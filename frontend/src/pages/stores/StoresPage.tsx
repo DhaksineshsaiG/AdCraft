@@ -1,6 +1,6 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Store as StoreIcon } from 'lucide-react';
+import { AlertCircle, Plus, Store as StoreIcon } from 'lucide-react';
 import PageHeader   from '../../components/ui/PageHeader';
 import EmptyState   from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/LoadingSpinner';
@@ -14,7 +14,7 @@ import {
   useSyncStore,
 } from '../../hooks/useStores';
 
-// â”€â”€â”€ StoresPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── StoresPage ───────────────────────────────────────────────────────────────
 
 function StoreGridSkeleton() {
   return (
@@ -48,9 +48,9 @@ export default function StoresPage() {
   const syncStoreMutation = useSyncStore();
   const disconnectStoreMutation = useDisconnectStore();
   const stores = storesQuery.data ?? [];
-  const showInitialSkeleton = storesQuery.isLoading && !storesQuery.data;
+  const showInitialSkeleton = storesQuery.isPending && !storesQuery.data;
 
-  // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Handlers ───────────────────────────────────────────────────────────────
 
   function handleSync(id: string) {
     setSyncingIds((prev) => new Set(prev).add(id));
@@ -91,6 +91,27 @@ export default function StoresPage() {
         {/* Content */}
         {showInitialSkeleton ? (
           <StoreGridSkeleton />
+        ) : storesQuery.isError ? (
+          <div className="card border-red-200 bg-red-50 p-6 text-center text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/40">
+                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold">Failed to load stores</h3>
+                <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1 max-w-sm mx-auto">
+                  {(storesQuery.error as Error)?.message || 'There was an error retrieving your connected stores. Please try again.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => storesQuery.refetch()}
+                className="btn btn-secondary btn-sm mt-2"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         ) : stores.length === 0 ? (
           <EmptyState
             icon={StoreIcon}

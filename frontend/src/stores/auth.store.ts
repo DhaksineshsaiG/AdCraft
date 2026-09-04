@@ -39,7 +39,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   subscribeWithSelector((set, get) => ({
     user:   null,
-    status: 'idle',
+    status: typeof window !== 'undefined' && !getAccessToken() ? 'unauthenticated' : 'idle',
     error:  null,
 
     // ── initialize ────────────────────────────────────────────────────────────

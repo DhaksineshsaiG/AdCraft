@@ -22,6 +22,26 @@ export type TemplateFillMode = 'solid' | 'outline' | 'glass' | 'gradient' | 'und
 
 export type TemplateShadowStyle = 'none' | 'soft' | 'floating' | 'dramatic' | 'glow' | 'contact';
 
+export type TemplateCompositionMode =
+  | 'product-right'
+  | 'product-left'
+  | 'product-center'
+  | 'product-bottom'
+  | 'product-dominant'
+  | 'framed-product';
+
+export type TemplateTypographyPersonality =
+  | 'editorial-serif'
+  | 'bold-display'
+  | 'modern-sans';
+
+export type TemplateProductBacking =
+  | 'none'
+  | 'pedestal'
+  | 'arch'
+  | 'halo'
+  | 'card';
+
 export interface TemplateSpacingSystem {
   base: number;
   sectionGap: number;
@@ -139,6 +159,9 @@ export interface RendererTemplateProfile {
   imageEmphasis: TemplateImageEmphasis;
   whitespaceProfile: TemplateWhitespaceProfile;
   affinity: TemplateAffinity;
+  compositionMode?: TemplateCompositionMode;
+  typographyPersonality?: TemplateTypographyPersonality;
+  productBacking?: TemplateProductBacking;
 }
 
 export interface TemplateSelectionInput {

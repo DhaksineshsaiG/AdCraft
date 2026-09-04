@@ -2,12 +2,14 @@ import React from 'react';
 import { Sparkles, ArrowRight, Clock, ShieldCheck, Rocket, AlertCircle } from 'lucide-react';
 import { BackendCampaign } from '../../services/campaign.service';
 import { cn } from '../../utils/cn';
+import PageDataLoader from '../ui/PageDataLoader';
 
 interface CampaignsListCardProps {
   campaigns: BackendCampaign[];
   activeCampaignId?: string;
   onSelectCampaign: (campaign: BackendCampaign) => void;
   onNewAnalysis: () => void;
+  isLoading?: boolean;
 }
 
 export const CampaignsListCard: React.FC<CampaignsListCardProps> = ({
@@ -15,6 +17,7 @@ export const CampaignsListCard: React.FC<CampaignsListCardProps> = ({
   activeCampaignId,
   onSelectCampaign,
   onNewAnalysis,
+  isLoading = false,
 }) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -36,7 +39,7 @@ export const CampaignsListCard: React.FC<CampaignsListCardProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Store Campaigns ({campaigns.length})
+            Store Campaigns {isLoading ? '' : `(${campaigns.length})`}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Select a campaign to inspect strategy, approval status, and commercial execution.
@@ -53,7 +56,13 @@ export const CampaignsListCard: React.FC<CampaignsListCardProps> = ({
         </button>
       </div>
 
-      {campaigns.length === 0 ? (
+      {isLoading ? (
+        <PageDataLoader
+          message="Loading store campaigns…"
+          description="Retrieving campaign strategies and commercial execution"
+          compact
+        />
+      ) : campaigns.length === 0 ? (
         <div className="text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
           <p className="text-xs text-slate-400">
             No campaigns created yet for this store. Run an analysis above to launch your first AI campaign!

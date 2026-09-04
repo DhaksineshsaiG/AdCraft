@@ -22,85 +22,135 @@ export class ProductRenderer {
     const reflectionId = builder.nextId('renderer2-product-reflection');
     const centerX = region.x + region.width / 2;
     const centerY = region.y + region.height / 2;
-    const focusInset = Math.min(region.width, region.height) * (0.035 + (template?.imageEmphasis.cropSafety ?? 0) * 0.25);
     const productRegion = scaleRegion(region, dynamicScale(decision, template));
-    const perspective = perspectiveOffset(decision.position.depth);
-    const preserveAspectRatio = decision.position.cropMode === 'cover' || decision.position.cropMode === 'close-up' || decision.position.cropMode === 'full-bleed'
-      ? 'xMidYMid slice'
-      : 'xMidYMid meet';
+    const isCover = decision.position.cropMode === 'cover' || decision.position.cropMode === 'full-bleed';
+    const preserveAspectRatio = isCover ? 'xMidYMid slice' : 'xMidYMid meet';
+    const clipAttr = isCover ? ` clip-path="url(#${clipId})"` : '';
 
     builder.addDef(
-      `<clipPath id="${clipId}"><rect ${rectAttrs(productRegion)} rx="${formatNumber(Math.min(productRegion.width, productRegion.height) * 0.055)}" /></clipPath>`
+      `<clipPath id="${clipId}"><rect ${rectAttrs(productRegion)} rx="${formatNumber(Math.min(productRegion.width, productRegion.height) * 0.04)}" /></clipPath>`
     );
+
     builder.addDef(
-      `<filter id="${shadowId}" x="-55%" y="-55%" width="210%" height="220%">` +
+      `<filter id="${shadowId}" x="-30%" y="-30%" width="160%" height="160%">` +
         shadowFilter(decision, productRegion, template) +
       `</filter>`
     );
+
     builder.addDef(
-      `<filter id="${glowId}" x="-70%" y="-70%" width="240%" height="240%">` +
-        `<feGaussianBlur stdDeviation="${formatNumber(Math.max(8, productRegion.width * 0.045 * (template?.imageEmphasis.glow ?? 1)))}" result="blur" />` +
-        `<feColorMatrix in="blur" type="matrix" values="0 0 0 0 ${hexChannel(decision.colors.accent, 0)} 0 0 0 0 ${hexChannel(decision.colors.accent, 1)} 0 0 0 0 ${hexChannel(decision.colors.accent, 2)} 0 0 0 ${formatNumber(0.45 + (template?.imageEmphasis.glow ?? 0.18) * 0.25)} 0" />` +
+      `<filter id="${glowId}" x="-40%" y="-40%" width="180%" height="180%">` +
+        `<feGaussianBlur stdDeviation="${formatNumber(Math.max(6, productRegion.width * 0.03))}" result="blur" />` +
+        `<feColorMatrix in="blur" type="matrix" values="0 0 0 0 ${hexChannel(decision.colors.accent, 0)} 0 0 0 0 ${hexChannel(decision.colors.accent, 1)} 0 0 0 0 ${hexChannel(decision.colors.accent, 2)} 0 0 0 0.28 0" />` +
       `</filter>`
     );
+
     builder.addDef(
       `<linearGradient id="${reflectionId}" x1="0%" y1="0%" x2="0%" y2="100%">` +
-        `<stop offset="0%" stop-color="${escapeSvg(decision.colors.ctaText)}" stop-opacity="0.24" />` +
-        `<stop offset="100%" stop-color="${escapeSvg(decision.colors.ctaText)}" stop-opacity="0" />` +
+        `<stop offset="0%" stop-color="${escapeSvg(decision.colors.accent)}" stop-opacity="0.18" />` +
+        `<stop offset="100%" stop-color="${escapeSvg(decision.colors.background)}" stop-opacity="0" />` +
       `</linearGradient>`
     );
 
     const content = product.imageUrl
-      ? `<image href="${escapeSvg(product.imageUrl)}" ${rectAttrs(productRegion)} preserveAspectRatio="${preserveAspectRatio}" clip-path="url(#${clipId})"${product.altText ? ` aria-label="${escapeSvg(product.altText)}"` : ''} />`
+      ? `<image href="${escapeSvg(product.imageUrl)}" ${rectAttrs(productRegion)} preserveAspectRatio="${preserveAspectRatio}"${clipAttr}${product.altText ? ` aria-label="${escapeSvg(product.altText)}"` : ''} />`
       : [
-          `<rect ${rectAttrs(productRegion)} rx="${formatNumber(Math.min(productRegion.width, productRegion.height) * 0.08)}" fill="${escapeSvg(decision.colors.surface)}" opacity="0.68" />`,
-          `<path d="M ${formatNumber(productRegion.x + productRegion.width * 0.18)} ${formatNumber(productRegion.y + productRegion.height * 0.62)} C ${formatNumber(productRegion.x + productRegion.width * 0.34)} ${formatNumber(productRegion.y + productRegion.height * 0.28)}, ${formatNumber(productRegion.x + productRegion.width * 0.68)} ${formatNumber(productRegion.y + productRegion.height * 0.28)}, ${formatNumber(productRegion.x + productRegion.width * 0.82)} ${formatNumber(productRegion.y + productRegion.height * 0.62)}" stroke="${escapeSvg(decision.colors.accent)}" stroke-width="${formatNumber(Math.max(4, productRegion.width * 0.015))}" fill="none" opacity="0.72" />`,
-          `<text x="${formatNumber(productRegion.x + productRegion.width / 2)}" y="${formatNumber(productRegion.y + productRegion.height / 2)}" text-anchor="middle" dominant-baseline="middle" font-family="${escapeSvg(decision.typography.descriptionFont)}" font-size="${formatNumber(Math.max(18, productRegion.width * 0.045))}" fill="${escapeSvg(decision.colors.description)}">Product Image</text>`,
+          `<rect ${rectAttrs(productRegion)} rx="${formatNumber(Math.min(productRegion.width, productRegion.height) * 0.06)}" fill="${escapeSvg(decision.colors.surface)}" opacity="0.88" />`,
+          `<circle cx="${formatNumber(productRegion.x + productRegion.width / 2)}" cy="${formatNumber(productRegion.y + productRegion.height * 0.44)}" r="${formatNumber(Math.min(productRegion.width, productRegion.height) * 0.2)}" fill="${escapeSvg(decision.colors.accent)}" opacity="0.16" />`,
+          `<path d="M ${formatNumber(productRegion.x + productRegion.width * 0.32)} ${formatNumber(productRegion.y + productRegion.height * 0.62)} C ${formatNumber(productRegion.x + productRegion.width * 0.42)} ${formatNumber(productRegion.y + productRegion.height * 0.38)}, ${formatNumber(productRegion.x + productRegion.width * 0.58)} ${formatNumber(productRegion.y + productRegion.height * 0.38)}, ${formatNumber(productRegion.x + productRegion.width * 0.68)} ${formatNumber(productRegion.y + productRegion.height * 0.62)}" stroke="${escapeSvg(decision.colors.accent)}" stroke-width="${formatNumber(Math.max(3, productRegion.width * 0.012))}" stroke-linecap="round" fill="none" opacity="0.85" />`,
+          `<text x="${formatNumber(productRegion.x + productRegion.width / 2)}" y="${formatNumber(productRegion.y + productRegion.height * 0.74)}" text-anchor="middle" dominant-baseline="middle" font-family="${escapeSvg(decision.typography.headlineFont)}" font-size="${formatNumber(Math.max(18, productRegion.width * 0.042))}" font-weight="600" fill="${escapeSvg(decision.colors.headline)}">${escapeSvg(product.altText || 'Featured Product')}</text>`,
         ].join('');
+
     const contactShadow = renderContactShadow(decision, productRegion, template);
-    const reflection = renderReflection(decision, productRegion, reflectionId, template);
-    const focus = renderFocus(decision, productRegion, focusInset);
-    const glow = decision.position.shadowStyle === 'luxury' || decision.position.shadowStyle === 'dramatic' || decision.position.depth === 'immersive'
-      ? `<ellipse cx="${formatNumber(centerX + perspective.x)}" cy="${formatNumber(centerY + perspective.y)}" rx="${formatNumber(productRegion.width * 0.46)}" ry="${formatNumber(productRegion.height * 0.36)}" fill="${escapeSvg(decision.colors.accent)}" opacity="${formatNumber(0.12 + (template?.imageEmphasis.glow ?? 0.18) * 0.12)}" filter="url(#${glowId})" />`
+    const glow =
+      decision.position.shadowStyle === 'luxury' || decision.position.shadowStyle === 'dramatic' || template?.shadowPreset.style === 'glow'
+        ? `<ellipse cx="${formatNumber(centerX)}" cy="${formatNumber(centerY)}" rx="${formatNumber(productRegion.width * 0.44)}" ry="${formatNumber(productRegion.height * 0.36)}" fill="${escapeSvg(decision.colors.accent)}" opacity="0.10" filter="url(#${glowId})" />`
+        : '';
+
+    const backing = renderProductBacking(decision, productRegion, template?.productBacking, centerX, centerY);
+
+    const rotation = Math.max(-2.5, Math.min(2.5, (decision.position.rotation || 0) * 0.12));
+    const transform = rotation !== 0
+      ? ` transform="rotate(${formatNumber(rotation)} ${formatNumber(centerX)} ${formatNumber(centerY)})"`
       : '';
 
     return [
       `<g data-product-position="${escapeSvg(decision.position.positionId)}">`,
+      backing,
       contactShadow,
       glow,
-      `<g transform="translate(${formatNumber(perspective.x)} ${formatNumber(perspective.y)}) rotate(${formatNumber(decision.position.rotation)} ${formatNumber(centerX)} ${formatNumber(centerY)}) skewX(${formatNumber(perspective.skew)})" filter="url(#${shadowId})">`,
-      focus,
+      `<g${transform} filter="url(#${shadowId})">`,
       content,
       '</g>',
-      reflection,
       '</g>',
     ].join('');
   }
 }
 
-function dynamicScale(decision: PosterDesignDecision, template?: RendererTemplateProfile): number {
-  const focusScale = decision.position.imagePriority === 'primary'
-    ? 1.08
-    : decision.position.imagePriority === 'balanced'
-      ? 1.02
-      : 0.92;
-  const cropScale = decision.position.cropMode === 'close-up'
-    ? 1.08
-    : decision.position.cropMode === 'contain'
-      ? 0.98
-      : 1;
+function renderProductBacking(
+  decision: PosterDesignDecision,
+  region: Region,
+  backing: RendererTemplateProfile['productBacking'],
+  centerX: number,
+  centerY: number
+): string {
+  if (!backing || backing === 'none') return '';
 
-  return Math.min(1.18, Math.max(0.76, focusScale * cropScale * (template?.imageEmphasis.scaleMultiplier ?? 1)));
+  if (backing === 'halo') {
+    const haloRadius = Math.round(Math.min(region.width, region.height) * 0.46);
+    return [
+      `<circle cx="${formatNumber(centerX)}" cy="${formatNumber(centerY)}" r="${formatNumber(haloRadius)}" fill="${escapeSvg(decision.colors.accent)}" opacity="0.12" />`,
+      `<circle cx="${formatNumber(centerX)}" cy="${formatNumber(centerY)}" r="${formatNumber(haloRadius * 0.72)}" fill="${escapeSvg(decision.colors.surface)}" opacity="0.22" />`,
+    ].join('');
+  }
+
+  if (backing === 'arch') {
+    const archW = Math.round(region.width * 0.88);
+    const archH = Math.round(region.height * 0.94);
+    const archX = region.x + Math.round((region.width - archW) / 2);
+    const archY = region.y + Math.round((region.height - archH) / 2);
+    const archR = Math.round(archW / 2);
+
+    return `<path d="M ${formatNumber(archX)} ${formatNumber(archY + archH)} L ${formatNumber(archX)} ${formatNumber(archY + archR)} A ${formatNumber(archR)} ${formatNumber(archR)} 0 0 1 ${formatNumber(archX + archW)} ${formatNumber(archY + archR)} L ${formatNumber(archX + archW)} ${formatNumber(archY + archH)} Z" fill="${escapeSvg(decision.colors.surface)}" opacity="0.32" stroke="${escapeSvg(decision.colors.accent)}" stroke-width="1.2" stroke-opacity="0.28" />`;
+  }
+
+  if (backing === 'pedestal') {
+    const pedW = Math.round(region.width * 0.74);
+    const pedH = Math.round(Math.max(16, region.height * 0.08));
+    const pedX = centerX;
+    const pedY = region.y + region.height * 0.92;
+
+    return [
+      `<ellipse cx="${formatNumber(pedX)}" cy="${formatNumber(pedY + pedH * 0.5)}" rx="${formatNumber(pedW * 0.5)}" ry="${formatNumber(pedH * 0.5)}" fill="${escapeSvg(decision.colors.shadow)}" opacity="0.25" />`,
+      `<ellipse cx="${formatNumber(pedX)}" cy="${formatNumber(pedY)}" rx="${formatNumber(pedW * 0.5)}" ry="${formatNumber(pedH * 0.42)}" fill="${escapeSvg(decision.colors.surface)}" stroke="${escapeSvg(decision.colors.border)}" stroke-width="1" opacity="0.85" />`,
+    ].join('');
+  }
+
+  if (backing === 'card') {
+    const cardW = Math.round(region.width * 0.92);
+    const cardH = Math.round(region.height * 0.94);
+    const cardX = region.x + Math.round((region.width - cardW) / 2);
+    const cardY = region.y + Math.round((region.height - cardH) / 2);
+
+    return `<rect x="${formatNumber(cardX)}" y="${formatNumber(cardY)}" width="${formatNumber(cardW)}" height="${formatNumber(cardH)}" rx="20" fill="${escapeSvg(decision.colors.surface)}" opacity="0.28" stroke="${escapeSvg(decision.colors.border)}" stroke-width="1" stroke-opacity="0.25" />`;
+  }
+
+  return '';
+}
+
+function dynamicScale(decision: PosterDesignDecision, template?: RendererTemplateProfile): number {
+  const emphasis = template?.imageEmphasis.scaleMultiplier ?? 1;
+  const decisionScale = (decision.layout.productScale || 0.5) > 0.6 ? 0.98 : 0.94;
+  return Math.min(1.0, Math.max(0.92, decisionScale * emphasis));
 }
 
 function scaleRegion(region: Region, scale: number): Region {
-  const width = region.width * scale;
-  const height = region.height * scale;
+  const width = Math.round(region.width * scale);
+  const height = Math.round(region.height * scale);
 
   return {
     ...region,
-    x: region.x + (region.width - width) / 2,
-    y: region.y + (region.height - height) / 2,
+    x: Math.round(region.x + (region.width - width) / 2),
+    y: Math.round(region.y + (region.height - height) / 2),
     width,
     height,
   };
@@ -108,54 +158,29 @@ function scaleRegion(region: Region, scale: number): Region {
 
 function shadowFilter(decision: PosterDesignDecision, region: Region, template?: RendererTemplateProfile): string {
   const style = template?.shadowPreset.style ?? decision.position.shadowStyle;
-  const opacityMultiplier = template?.shadowPreset.opacity ? template.shadowPreset.opacity / 0.24 : 1;
-  const blurMultiplier = template?.shadowPreset.blur ? template.shadowPreset.blur / 26 : 1;
 
   switch (style) {
     case 'none':
       return '';
     case 'contact':
-      return `<feDropShadow dx="${formatNumber(template?.shadowPreset.offsetX ?? 0)}" dy="${formatNumber(template?.shadowPreset.offsetY ?? region.height * 0.018)}" stdDeviation="${formatNumber(region.width * 0.018 * blurMultiplier)}" flood-color="${escapeSvg(decision.colors.shadow)}" flood-opacity="${formatNumber(0.24 * opacityMultiplier)}" />`;
+      return `<feDropShadow dx="0" dy="${formatNumber(Math.max(4, region.height * 0.02))}" stdDeviation="${formatNumber(Math.max(6, region.width * 0.02))}" flood-color="${escapeSvg(decision.colors.shadow)}" flood-opacity="0.22" />`;
     case 'dramatic':
-      return `<feDropShadow dx="${formatNumber(template?.shadowPreset.offsetX ?? region.width * 0.035)}" dy="${formatNumber(template?.shadowPreset.offsetY ?? region.height * 0.075)}" stdDeviation="${formatNumber(region.width * 0.055 * blurMultiplier)}" flood-color="${escapeSvg(decision.colors.shadow)}" flood-opacity="${formatNumber(0.52 * opacityMultiplier)}" />`;
+      return `<feDropShadow dx="0" dy="${formatNumber(Math.max(8, region.height * 0.04))}" stdDeviation="${formatNumber(Math.max(12, region.width * 0.035))}" flood-color="${escapeSvg(decision.colors.shadow)}" flood-opacity="0.38" />`;
     case 'luxury':
-      return `<feDropShadow dx="${formatNumber(template?.shadowPreset.offsetX ?? 0)}" dy="${formatNumber(template?.shadowPreset.offsetY ?? region.height * 0.045)}" stdDeviation="${formatNumber(region.width * 0.038 * blurMultiplier)}" flood-color="${escapeSvg(decision.colors.accent)}" flood-opacity="${formatNumber(0.32 * opacityMultiplier)}" />`;
+      return `<feDropShadow dx="0" dy="${formatNumber(Math.max(6, region.height * 0.03))}" stdDeviation="${formatNumber(Math.max(10, region.width * 0.028))}" flood-color="${escapeSvg(decision.colors.shadow)}" flood-opacity="0.28" />`;
     case 'floating':
-      return `<feDropShadow dx="${formatNumber(template?.shadowPreset.offsetX ?? 0)}" dy="${formatNumber(template?.shadowPreset.offsetY ?? region.height * 0.075)}" stdDeviation="${formatNumber(region.width * 0.045 * blurMultiplier)}" flood-color="${escapeSvg(decision.colors.shadow)}" flood-opacity="${formatNumber(0.34 * opacityMultiplier)}" />`;
     case 'soft':
     default:
-      return `<feDropShadow dx="${formatNumber(template?.shadowPreset.offsetX ?? 0)}" dy="${formatNumber(template?.shadowPreset.offsetY ?? region.height * 0.04)}" stdDeviation="${formatNumber(region.width * 0.032 * blurMultiplier)}" flood-color="${escapeSvg(decision.colors.shadow)}" flood-opacity="${formatNumber(0.26 * opacityMultiplier)}" />`;
+      return `<feDropShadow dx="0" dy="${formatNumber(Math.max(6, region.height * 0.025))}" stdDeviation="${formatNumber(Math.max(8, region.width * 0.025))}" flood-color="${escapeSvg(decision.colors.shadow)}" flood-opacity="0.25" />`;
   }
-}
-
-function perspectiveOffset(depth: string): { x: number; y: number; skew: number } {
-  if (depth === 'immersive') return { x: 12, y: -8, skew: -3 };
-  if (depth === 'layered') return { x: 8, y: -4, skew: -2 };
-  if (depth === 'foreground') return { x: 4, y: -2, skew: -1 };
-  if (depth === 'flat') return { x: 0, y: 0, skew: 0 };
-  return { x: 2, y: -1, skew: -0.5 };
 }
 
 function renderContactShadow(decision: PosterDesignDecision, region: Region, template?: RendererTemplateProfile): string {
   if (decision.position.shadowStyle === 'none') return '';
-  const opacity = (decision.position.shadowStyle === 'dramatic' ? 0.24 : 0.14) * ((template?.shadowPreset.opacity ?? 0.24) / 0.24);
+  const baseOpacity = template?.shadowPreset.opacity ?? 0.2;
+  const opacity = decision.position.shadowStyle === 'dramatic' ? baseOpacity * 1.3 : baseOpacity * 0.85;
 
-  return `<ellipse cx="${formatNumber(region.x + region.width / 2)}" cy="${formatNumber(region.y + region.height * 0.94)}" rx="${formatNumber(region.width * 0.38)}" ry="${formatNumber(region.height * 0.07)}" fill="${escapeSvg(decision.colors.shadow)}" opacity="${formatNumber(opacity)}" />`;
-}
-
-function renderReflection(decision: PosterDesignDecision, region: Region, reflectionId: string, template?: RendererTemplateProfile): string {
-  const reflection = template?.imageEmphasis.reflection ?? 0;
-  if (reflection <= 0.2 && decision.position.positionId !== 'luxury' && decision.position.positionId !== 'hero' && decision.position.shadowStyle !== 'luxury') {
-    return '';
-  }
-
-  return `<rect x="${formatNumber(region.x + region.width * 0.14)}" y="${formatNumber(region.y + region.height * 0.92)}" width="${formatNumber(region.width * 0.72)}" height="${formatNumber(region.height * 0.12)}" rx="${formatNumber(region.height * 0.04)}" fill="url(#${reflectionId})" opacity="${formatNumber(Math.max(0.18, reflection || 0.52))}" />`;
-}
-
-function renderFocus(decision: PosterDesignDecision, region: Region, inset: number): string {
-  if (decision.position.imagePriority === 'supporting' || decision.position.imagePriority === 'atmospheric') return '';
-
-  return `<rect x="${formatNumber(region.x + inset)}" y="${formatNumber(region.y + inset)}" width="${formatNumber(region.width - inset * 2)}" height="${formatNumber(region.height - inset * 2)}" rx="${formatNumber(Math.min(region.width, region.height) * 0.065)}" fill="none" stroke="${escapeSvg(decision.colors.border)}" stroke-width="${formatNumber(Math.max(1, inset * 0.12))}" opacity="0.24" />`;
+  return `<ellipse cx="${formatNumber(region.x + region.width / 2)}" cy="${formatNumber(region.y + region.height * 0.97)}" rx="${formatNumber(region.width * 0.36)}" ry="${formatNumber(Math.max(8, region.height * 0.04))}" fill="${escapeSvg(decision.colors.shadow)}" opacity="${formatNumber(opacity)}" />`;
 }
 
 function hexChannel(hex: string, channel: number): number {

@@ -89,7 +89,7 @@ export interface ApiError {
 export const TOKEN_KEY   = 'accessToken';
 export const REFRESH_KEY = 'refreshToken';
 
-const API_ORIGIN = import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '');
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const AUTH_REQUEST_TIMEOUT_MS = 90_000;
 
 // ─── Axios instance ───────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, RefreshCw, Search, ChevronDown, X } from 'lucide-react';
+import { AlertCircle, Package, RefreshCw, Search, ChevronDown, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader  from '../../components/ui/PageHeader';
 import EmptyState  from '../../components/ui/EmptyState';
@@ -40,7 +40,7 @@ function ProductGridSkeleton() {
   );
 }
 
-// â”€â”€â”€ Select dropdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Select dropdown ──────────────────────────────────────────────────────────
 
 function FilterSelect({
   value,
@@ -77,7 +77,7 @@ function FilterSelect({
   );
 }
 
-// â”€â”€â”€ ProductsPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ProductsPage ─────────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
   const [search,       setSearch]       = useState('');
@@ -95,7 +95,7 @@ export default function ProductsPage() {
   });
   const products = productsQuery.data?.products ?? [];
   const filtered = products;
-  const showInitialSkeleton = productsQuery.isLoading && !productsQuery.data;
+  const showInitialSkeleton = productsQuery.isPending && !productsQuery.data;
   const showCountLoading = showInitialSkeleton || productsQuery.isPlaceholderData;
   const totalProducts = productsQuery.data?.pagination.total ?? products.length;
   const storeOptions = [
@@ -189,23 +189,21 @@ export default function ProductsPage() {
 
       {/* Result meta */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          {showCountLoading ? (
-            'Loading products...'
-          ) : (
-            <>
-              Showing{' '}
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {filtered.length}
-              </span>{' '}
-              of{' '}
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {totalProducts}
-              </span>{' '}
-              products
-            </>
-          )}
-        </p>
+        {showCountLoading ? (
+          <Skeleton className="h-4 w-40 rounded" />
+        ) : (
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Showing{' '}
+            <span className="font-semibold text-slate-700 dark:text-slate-300">
+              {filtered.length}
+            </span>{' '}
+            of{' '}
+            <span className="font-semibold text-slate-700 dark:text-slate-300">
+              {totalProducts}
+            </span>{' '}
+            products
+          </p>
+        )}
 
         {hasActiveFilter && (
           <button
@@ -229,6 +227,35 @@ export default function ProductsPage() {
             transition={{ duration: 0.18 }}
           >
             <ProductGridSkeleton />
+          </motion.div>
+        ) : productsQuery.isError ? (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="card border-red-200 bg-red-50 p-6 text-center text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/40">
+                  <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold">Failed to load products</h3>
+                  <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1 max-w-sm mx-auto">
+                    {(productsQuery.error as Error)?.message || 'There was an error retrieving your products. Please try again.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => productsQuery.refetch()}
+                  className="btn btn-secondary btn-sm mt-2"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
           </motion.div>
         ) : filtered.length === 0 ? (
           <motion.div

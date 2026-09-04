@@ -156,14 +156,23 @@ function SidebarContent({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.18 }}
-              className="flex items-center gap-2.5"
+              className="flex items-center gap-3 min-w-0"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500">
-                <Zap className="h-4 w-4 text-white" strokeWidth={2.2} />
+              <div className="brand-logo-wrapper shrink-0">
+                <img
+                  src="/brand/adcraft-icon.png"
+                  alt="AdCraft"
+                  className="brand-logo h-8 w-8 object-contain"
+                />
               </div>
-              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                PosterAI
-              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-none">
+                  AdCraft
+                </span>
+                <span className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-500 mt-1 leading-none">
+                  Ideas Into Impact
+                </span>
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -172,9 +181,15 @@ function SidebarContent({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.18 }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500"
+              className="collapsed-brand flex h-9 w-9 items-center justify-center shrink-0"
             >
-              <Zap className="h-4 w-4 text-white" strokeWidth={2.2} />
+              <div className="brand-logo-wrapper brand-logo-glow-high">
+                <img
+                  src="/brand/adcraft-icon.png"
+                  alt="AdCraft"
+                  className="brand-logo h-8 w-8 object-contain"
+                />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   exportBulk,
@@ -9,22 +9,24 @@ import {
 import { publishNotification } from '@services/notifications.service';
 import type { ExportFormat } from '@components/exports/ExportCard';
 import { triggerBrowserDownload } from '../utils/download';
+import { normalizeQueryParams } from '../utils/query';
 
 export const exportKeys = {
   all: ['exports'] as const,
   history: (params: { page?: number; limit?: number } = {}) =>
-    [...exportKeys.all, 'history', params] as const,
+    [...exportKeys.all, 'history', normalizeQueryParams(params)] as const,
   analytics: () => [...exportKeys.all, 'analytics'] as const,
 };
 
 export function useExportHistory(
-  params: { page?: number; limit?: number } = { limit: 50 }
+  params: { page?: number; limit?: number } = { limit: 100 }
 ) {
+  const normalized = normalizeQueryParams(params);
   return useQuery({
     queryKey: exportKeys.history(params),
-    queryFn: () => getExportHistory(params),
-    placeholderData: (previousData) => previousData,
-    staleTime: 15_000,
+    queryFn: () => getExportHistory(normalized),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -32,8 +34,8 @@ export function useExportAnalytics() {
   return useQuery({
     queryKey: exportKeys.analytics(),
     queryFn: getExportAnalytics,
-    placeholderData: (previousData) => previousData,
-    staleTime: 15_000,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 

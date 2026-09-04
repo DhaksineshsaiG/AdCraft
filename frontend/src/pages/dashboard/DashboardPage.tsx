@@ -120,6 +120,7 @@ export default function DashboardPage() {
       iconBg: 'bg-brand-100 dark:bg-brand-900/30',
       iconColor: 'text-brand-600 dark:text-brand-400',
       href: '/stores',
+      isLoading: storesQuery.isPending && !storesQuery.data,
     },
     {
       label: 'Total Products',
@@ -130,6 +131,7 @@ export default function DashboardPage() {
       iconBg: 'bg-violet-100 dark:bg-violet-900/30',
       iconColor: 'text-violet-600 dark:text-violet-400',
       href: '/products',
+      isLoading: productAnalyticsQuery.isPending && !productAnalyticsQuery.data,
     },
     {
       label: 'Generated Posters',
@@ -140,6 +142,7 @@ export default function DashboardPage() {
       iconBg: 'bg-cyan-100 dark:bg-cyan-900/30',
       iconColor: 'text-cyan-600 dark:text-cyan-400',
       href: '/posters',
+      isLoading: postersQuery.isPending && !postersQuery.data,
     },
     {
       label: 'Total Exports',
@@ -150,8 +153,24 @@ export default function DashboardPage() {
       iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       href: '/exports',
+      isLoading: exportAnalyticsQuery.isPending && !exportAnalyticsQuery.data,
     },
-  ], [exportAnalytics, posters, postersQuery.data?.pagination.total, productAnalytics, stores]);
+  ], [
+    exportAnalytics?.exportsLast7Days,
+    exportAnalytics?.totalExports,
+    exportAnalyticsQuery.data,
+    exportAnalyticsQuery.isPending,
+    posters,
+    postersQuery.data,
+    postersQuery.isPending,
+    productAnalytics?.recentlySynced,
+    productAnalytics?.totalProducts,
+    productAnalyticsQuery.data,
+    productAnalyticsQuery.isPending,
+    stores,
+    storesQuery.data,
+    storesQuery.isPending,
+  ]);
 
   const activities = useMemo<Activity[]>(() => {
     const storeActivities = stores
@@ -201,13 +220,14 @@ export default function DashboardPage() {
   }, [contentRecords, exportRecords, posters, stores]);
 
   const isDashboardLoading =
-    storesQuery.isLoading ||
-    productAnalyticsQuery.isLoading ||
-    productAnalyticsQuery.isFetching ||
-    postersQuery.isLoading ||
-    exportAnalyticsQuery.isLoading ||
-    exportsQuery.isLoading ||
-    contentHistoryQuery.isLoading;
+    (storesQuery.isPending && !storesQuery.data) ||
+    (productAnalyticsQuery.isPending && !productAnalyticsQuery.data) ||
+    (postersQuery.isPending && !postersQuery.data) ||
+    (exportAnalyticsQuery.isPending && !exportAnalyticsQuery.data) ||
+    (exportsQuery.isPending && !exportsQuery.data) ||
+    (contentHistoryQuery.isPending && !contentHistoryQuery.data);
+
+  const isActivityLoading = isDashboardLoading && activities.length === 0;
 
   function handleSyncStores() {
     stores
@@ -273,7 +293,7 @@ export default function DashboardPage() {
           className="xl:col-span-2"
           aria-label="Recent activity"
         >
-          <RecentActivity activities={activities} isLoading={isDashboardLoading} />
+          <RecentActivity activities={activities} isLoading={isActivityLoading} />
         </motion.section>
 
         {/* Quick actions — takes 1/3 on xl */}

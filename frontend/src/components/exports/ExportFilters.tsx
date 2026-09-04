@@ -1,5 +1,6 @@
 import { ChevronDown, Search, X } from 'lucide-react';
 import { cn }           from '../../utils/cn';
+import { Skeleton }     from '../ui/LoadingSpinner';
 import type { ExportStatus, ExportFormat } from './ExportCard';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -17,6 +18,7 @@ interface ExportFiltersProps {
   onClear:       () => void;
   totalShown:    number;
   totalRecords:  number;
+  isLoading?:    boolean;
   className?:    string;
 }
 
@@ -88,6 +90,7 @@ export default function ExportFilters({
   onClear,
   totalShown,
   totalRecords,
+  isLoading,
   className,
 }: ExportFiltersProps) {
   const hasActiveFilter =
@@ -147,13 +150,17 @@ export default function ExportFilters({
 
       {/* Row 2: result count + clear */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Showing{' '}
-          <span className="font-semibold text-slate-700 dark:text-slate-300">{totalShown}</span>
-          {' '}of{' '}
-          <span className="font-semibold text-slate-700 dark:text-slate-300">{totalRecords}</span>
-          {' '}exports
-        </p>
+        {isLoading ? (
+          <Skeleton className="h-4 w-36 rounded my-0.5" />
+        ) : (
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Showing{' '}
+            <span className="font-semibold text-slate-700 dark:text-slate-300">{totalShown}</span>
+            {' '}of{' '}
+            <span className="font-semibold text-slate-700 dark:text-slate-300">{totalRecords}</span>
+            {' '}exports
+          </p>
+        )}
 
         {hasActiveFilter && (
           <button

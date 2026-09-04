@@ -49,6 +49,8 @@ export class RenderValidator {
       [regions.imageRegion, regions.priceRegion],
       [regions.imageRegion, regions.ctaRegion],
       [regions.headlineRegion, regions.descriptionRegion],
+      [regions.headlineRegion, regions.priceRegion],
+      [regions.headlineRegion, regions.ctaRegion],
       [regions.descriptionRegion, regions.priceRegion],
       [regions.priceRegion, regions.ctaRegion],
       [regions.descriptionRegion, regions.ctaRegion],
